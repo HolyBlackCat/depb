@@ -158,7 +158,7 @@ export __MAKE_EXECUTE_COMMAND__
 # $7 is the build mode.
 # $8 is additional build parameters.
 override define target_template =
-$4: override __MAKE_EXECUTE_COMMAND__ := $(call Build_$7,"$(CURDIR)/$3",$8)
+$4: override __MAKE_EXECUTE_COMMAND__ := $(subst __LOG__,>>"$(CURDIR)/$3",$(call Build_$7,$8))
 $4: $2
 	@$(call echo_lf)
 	@$(call echo,--- NOW MAKING: $1)
@@ -169,7 +169,7 @@ $4: $2
 	@$(call mkdir,./$(TMP_DIR))
 	@$(maybe_pause)
 	@$(call echo,Obtaining source... [$6])
-	@$(call Unpack_$6,"$(CURDIR)/$3","$5")
+	@$(call Unpack_$6,>>"$(CURDIR)/$3","$(SOURCE_DIR)/$5")
 	@$(maybe_pause)
 	@$(call echo,Building... [$7])
 	@$(MAKE) --no-print-directory -C $(TMP_DIR) -f $(CURDIR)/Makefile
@@ -196,35 +196,48 @@ override Library = \
 	$(eval override last_target := $(call final_lib_log_name,$1))
 
 # Unpack modes:
-# $1 is the log file name.
+# $1 is the log file name, written as `>>"/foo/foo.log"`.
 # $2 is the archive name.
-override Unpack_TarGzArchive = tar -C $(TMP_DIR) -x -f $(SOURCE_DIR)/$2 >>$1
-override Unpack_ZipArchive = unzip $(SOURCE_DIR)/$2 -d $(TMP_DIR) >>$1
+override Unpack_TarGzArchive = tar -C $(TMP_DIR) -x -f $2 $1
+override Unpack_ZipArchive = unzip $2 -d $(TMP_DIR) $1
 
 # You can use this in your build modes to signal that the configuration step is finished.
 override configuring_done := $(call echo,Configuration finished$(comma) proceeding.) && $(maybe_pause)
 
 # Build modes:
-# $1 is the log file name.
-# $2 is the additional parameters.
-# __BUILD_DIR__ is the build directory (note that it's not a variable).
-override Build_Custom = $(call cd,__BUILD_DIR__) && $2 >>$1
-override Build_ConfigureMake = $(call cd,__BUILD_DIR__) && ./configure "--prefix=$(prefix)" $2 >>$1 && $(configuring_done) && $(MAKE) --no-print-directory -j$(JOBS) >>$1 && make install
+# $1 is the additional parameters.
+# __LOG__ (not a variable) is the log file name, written as `>>"/foo/foo.log"`.
+# __BUILD_DIR__ (not a variable) is the build directory.
+override Build_Custom = \
+	$(call cd,__BUILD_DIR__) && \
+	$1
+override Build_ConfigureMake = \
+	$(call cd,__BUILD_DIR__) && \
+	./configure "--prefix=$(prefix)" $1 __LOG__ && \
+	$(configuring_done) && \
+	$(MAKE) --no-print-directory -j$(JOBS) __LOG__ && \
+	$(MAKE) --no-print-directory install __LOG__
+override Build_CMake = $(call cd,__BUILD_DIR__) && \
+	$(call mkdir,build) && \
+	$(call cd,build) && \
+	cmake -DCMAKE_C_COMPILER=$(CC) -DCMAKE_CXX_COMPILER=$(CXX) -DCMAKE_BUILD_TYPE=Release -G $(CMAKE_MAKEFILE_FLAVOR) .. __LOG__ && \
+	$(MAKE) --no-print-directory -j$(JOBS) && \
+	$(MAKE) --no-print-directory install __LOG__
 
 
 # --- LOAD CONFIG ---
 
-mode :=
-override mode := $(strip $(mode))
+MODE :=
+override MODE := $(strip $(MODE))
 
 include config.mk
 
-ifneq ($(mode),)
-ifneq ($(words $(mode)),1)
-$(error Invalid `mode`. Expected one of: $(mode_list))
+ifneq ($(MODE),)
+ifneq ($(words $(MODE)),1)
+$(error Invalid `MODE`. Expected one of: $(mode_list))
 endif
-ifeq ($(filter $(mode_list),$(mode)),)
-$(error Invalid `mode`. Expected one of: $(mode_list))
+ifeq ($(filter $(mode_list),$(MODE)),)
+$(error Invalid `MODE`. Expected one of: $(mode_list))
 endif
 endif
 
@@ -254,14 +267,14 @@ here:
 # Prints various info about the build configuration, and prepares things
 .PHONY: __prepare
 __prepare:
-ifeq ($(mode),)
-	$(error Please specify `mode`. One of: $(mode_list))
+ifeq ($(MODE),)
+	$(error Please specify `MODE`. One of: $(mode_list))
 endif
-	@$(if $(findstring $(mode),-),$(error Please specify `mode`. One of: $(mode_list)))
+	@$(if $(findstring $(MODE),-),$(error Please specify `MODE`. One of: $(mode_list)))
 	@$(echo_lf)
 	@$(call echo,--- STATUS)
 	@$(echo_lf)
-	@$(call echo,Mode: $(mode))
+	@$(call echo,Mode: $(MODE))
 	@$(call echo,Target directory: $(prefix))
 	@$(call echo,Makefile flavor: $(CMAKE_MAKEFILE_FLAVOR))
 	@$(call echo,Parallel jobs: $(JOBS))
