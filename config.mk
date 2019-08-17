@@ -8,6 +8,12 @@ override mode_list := windows-x86_64 generic
 
 # Begin library list
 ifeq ($(MODE),windows-x86_64)
+$(call Library,sdl2,SDL2-devel-2.0.10-mingw.tar.gz,TarGzArchive,Prebuilt,x86_64-w64-mingw32)
+else ifneq ($(MODE),)
+$(error Not sure how to build sdl2 for this mode. Please fix `config.mk`.)
+endif
+
+ifeq ($(MODE),windows-x86_64)
 $(call Library,zlib,zlib-1.2.11.tar.gz,TarGzArchive,Custom,\
 	make -f win32/Makefile.gcc --no-print-directory "CC=$(CC)" "CXX=$(CXX)" __LOG__ && \
 	make -f win32/Makefile.gcc --no-print-directory install "INCLUDE_PATH=$(prefix)/include" "LIBRARY_PATH=$(prefix)/lib" "BINARY_PATH=$(prefix)/bin" __LOG__)

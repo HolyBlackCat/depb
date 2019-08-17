@@ -5,6 +5,7 @@
 
 # Prevent recursive invocations of Make from using our flags.
 # This fixes some really obscure bugs.
+override _MAKEFLAGS := $(MAKEFLAGS)
 undefine MAKEFLAGS
 
 
@@ -71,17 +72,16 @@ endif
 
 # Shell commands.
 # Example usage: $(call rmfile, bin/out.exe)
-override silence = >$(dev_null) 2>$(dev_null) || $(success)
 # - Utilities
-override dev_null := /dev/null
 override success := true
 # - Shell commands
-override cd = cd $1# Sic!
-override rmfile = rm -f $1 $(silence)
-override rmdir = rm -rf $1 $(silence)
-override mkdir = mkdir -p $1 $(silence)
-override move = mv -f $1 $2 $(silence)
-override touch = touch $1 $(silence)
+override cd = cd $1
+override copy = cp -af $1 $2
+override rmfile = rm -f $1
+override rmdir = rm -rf $1
+override mkdir = mkdir -p $1
+override move = mv -f $1 $2
+override touch = touch $1
 override echo = echo '$(subst ','"'"',$1)'
 override echo_lf := echo
 override pause := read -s -n 1 -p "Press any key to continue . . ." && echo
@@ -172,7 +172,7 @@ $4: $2
 	@$(call Unpack_$6,>>"$(CURDIR)/$3","$(SOURCE_DIR)/$5")
 	@$(maybe_pause)
 	@$(call echo,Building... [$7])
-	@$(MAKE) --no-print-directory -C $(TMP_DIR) -f $(CURDIR)/Makefile
+	@$(MAKE) --no-print-directory -C $(TMP_DIR) -f $(CURDIR)/Makefile $(filter --trace,$(_MAKEFLAGS))
 	@-$(fix_pkgconfig_files)
 	@$(maybe_pause)
 	@$(call move,$3,$4)
@@ -208,16 +208,18 @@ override configuring_done := $(call echo,Configuration finished$(comma) proceedi
 # $1 is the additional parameters.
 # __LOG__ (not a variable) is the log file name, written as `>>"/foo/foo.log"`.
 # __BUILD_DIR__ (not a variable) is the build directory.
+override Build_Prebuilt = \
+	@$(call copy,"__BUILD_DIR__$(if $(strip $1),/$(strip $1))"/*,"$(prefix)") __LOG__
 override Build_Custom = \
-	$(call cd,__BUILD_DIR__) && \
+	$(call cd,"__BUILD_DIR__") && \
 	$1
 override Build_ConfigureMake = \
-	$(call cd,__BUILD_DIR__) && \
+	$(call cd,"__BUILD_DIR__") && \
 	./configure "--prefix=$(prefix)" $1 __LOG__ && \
 	$(configuring_done) && \
 	$(MAKE) --no-print-directory -j$(JOBS) __LOG__ && \
 	$(MAKE) --no-print-directory install __LOG__
-override Build_CMake = $(call cd,__BUILD_DIR__) && \
+override Build_CMake = $(call cd,"__BUILD_DIR__") && \
 	$(call mkdir,build) && \
 	$(call cd,build) && \
 	cmake -DCMAKE_C_COMPILER=$(CC) -DCMAKE_CXX_COMPILER=$(CXX) -DCMAKE_BUILD_TYPE=Release -G $(CMAKE_MAKEFILE_FLAVOR) .. __LOG__ && \
@@ -271,6 +273,7 @@ ifeq ($(MODE),)
 	$(error Please specify `MODE`. One of: $(mode_list))
 endif
 	@$(if $(findstring $(MODE),-),$(error Please specify `MODE`. One of: $(mode_list)))
+	@$(if $(findstring $(space),$(CURDIR)),$(info WARNING: Current path contains spaces. This could be problematic.))
 	@$(echo_lf)
 	@$(call echo,--- STATUS)
 	@$(echo_lf)
@@ -282,16 +285,15 @@ endif
 	@$(call echo,PAUSE = $(PAUSE) ($(if $(findstring 0,$(PAUSE)),will run in non-interactive mode,will pause between actions)))
 	@$(echo_lf)
 	@$(call echo,MAKE = $(MAKE))
-	@$(MAKE) --version 2>$(dev_null) || $(success)
+	@$(MAKE) --version
 	@$(echo_lf)
 	@$(call echo,CC = $(CC))
-	@$(CC) 2>$(dev_null) || $(success)
-	@$(CC) --version 2>$(dev_null) || $(success)
+	@$(CC) --version
 	@$(echo_lf)
 	@$(call echo,CXX = $(CXX))
-	@$(CXX) 2>$(dev_null) || $(success)
-	@$(CXX) --version 2>$(dev_null) || $(success)
+	@$(CXX) --version
 	@$(maybe_pause)
+	@$(call mkdir,./$(LOG_DIR))
 	@$(call mkdir,./$(LOG_DIR))
 
 endif
