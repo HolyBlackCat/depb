@@ -1,4 +1,7 @@
-# --- MAKEFILE CONFIGURATION ---
+# Nothing to see here.
+# Go check `config.mk`.
+
+# --- GLOBAL CONFIGURATION ---
 
 # Disable parallel builds.
 .NOTPARALLEL:
@@ -7,6 +10,10 @@
 # This fixes some really obscure bugs.
 override _MAKEFLAGS := $(MAKEFLAGS)
 undefine MAKEFLAGS
+
+# Disable localized messages
+override LANG :=
+export LANG
 
 
 # --- ALTERNATIVE  MAKEFILE MODES ---
@@ -115,15 +122,20 @@ JOBS := 1
 override JOBS := $(strip $(JOBS))
 
 # Whether we should pause after each step to let user examine the logs.
-PAUSE := 1
+PAUSE := sometimes
 override PAUSE := $(strip $(PAUSE))
 
-ifeq ($(PAUSE),0)
+ifeq ($(PAUSE),never)
 override maybe_pause := $(success)
-else ifeq ($(PAUSE),1)
+override maybe_pause_hard := $(maybe_pause)
+else ifeq ($(PAUSE),sometimes)
+override maybe_pause := $(success)
+override maybe_pause_hard := $(echo_lf) && $(pause) && $(echo_lf)
+else ifeq ($(PAUSE),always)
 override maybe_pause := $(echo_lf) && $(pause) && $(echo_lf)
+override maybe_pause_hard := $(maybe_pause)
 else
-$(error Expected PAUSE to be one 0 or 1)
+$(error Expected PAUSE to be one of: never sometimes always)
 endif
 
 override make_version := $(shell $(MAKE) --version)
@@ -158,7 +170,8 @@ export __MAKE_EXECUTE_COMMAND__
 # $7 is the build mode.
 # $8 is additional build parameters.
 override define target_template =
-$4: override __MAKE_EXECUTE_COMMAND__ := $(subst __LOG__,>>"$(CURDIR)/$3",$(call Build_$7,$8))
+.PRECIOUS: $4# Prevents deletion of the log on failure.
+$4: override __MAKE_EXECUTE_COMMAND__ := $(subst __LOG__,>>"$(CURDIR)/$3" 2>&1,$(call Build_$7,$8))
 $4: $2
 	@$(call echo_lf)
 	@$(call echo,--- NOW MAKING: $1)
@@ -167,9 +180,9 @@ $4: $2
 	@$(call rmfile,$3)
 	@$(call rmdir,./$(TMP_DIR))
 	@$(call mkdir,./$(TMP_DIR))
-	@$(maybe_pause)
+	@$(maybe_pause_hard)
 	@$(call echo,Obtaining source... [$6])
-	@$(call Unpack_$6,>>"$(CURDIR)/$3","$(SOURCE_DIR)/$5")
+	@$(call Unpack_$6,"$(SOURCE_DIR)/$5",>>"$(CURDIR)/$3" 2>&1)
 	@$(maybe_pause)
 	@$(call echo,Building... [$7])
 	@$(MAKE) --no-print-directory -C $(TMP_DIR) -f $(CURDIR)/Makefile $(filter --trace,$(_MAKEFLAGS))
@@ -196,10 +209,10 @@ override Library = \
 	$(eval override last_target := $(call final_lib_log_name,$1))
 
 # Unpack modes:
-# $1 is the log file name, written as `>>"/foo/foo.log"`.
-# $2 is the archive name.
-override Unpack_TarGzArchive = tar -C $(TMP_DIR) -x -f $2 $1
-override Unpack_ZipArchive = unzip $2 -d $(TMP_DIR) $1
+# $1 is the archive name.
+# $2 is the log file name, written as `>>"/foo/foo.log" 2>&1`.
+override Unpack_TarGzArchive = tar -C $(TMP_DIR) -x -f $1 $2
+override Unpack_ZipArchive = unzip $1 -d $(TMP_DIR) $2
 
 # You can use this in your build modes to signal that the configuration step is finished.
 override configuring_done := $(call echo,Configuration finished$(comma) proceeding.) && $(maybe_pause)
@@ -207,6 +220,7 @@ override configuring_done := $(call echo,Configuration finished$(comma) proceedi
 # Build modes:
 # $1 is the additional parameters.
 # __LOG__ (not a variable) is the log file name, written as `>>"/foo/foo.log"`.
+# We can't put __LOG__ into a parameter, because then user wouldn't be able to use it in $1.
 # __BUILD_DIR__ (not a variable) is the build directory.
 override Build_Prebuilt = \
 	@$(call copy,"__BUILD_DIR__$(if $(strip $1),/$(strip $1))"/*,"$(prefix)") __LOG__
@@ -222,8 +236,9 @@ override Build_ConfigureMake = \
 override Build_CMake = $(call cd,"__BUILD_DIR__") && \
 	$(call mkdir,build) && \
 	$(call cd,build) && \
-	cmake -DCMAKE_C_COMPILER=$(CC) -DCMAKE_CXX_COMPILER=$(CXX) -DCMAKE_BUILD_TYPE=Release -G $(CMAKE_MAKEFILE_FLAVOR) .. __LOG__ && \
-	$(MAKE) --no-print-directory -j$(JOBS) && \
+	cmake -Wno-dev -DCMAKE_C_COMPILER="$(CC)" -DCMAKE_CXX_COMPILER="$(CXX)" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$(prefix)" -DCMAKE_SYSTEM_PREFIX_PATH=$(prefix) $1 -G $(CMAKE_MAKEFILE_FLAVOR) .. __LOG__ && \
+	$(configuring_done) && \
+	$(MAKE) --no-print-directory -j$(JOBS) __LOG__ && \
 	$(MAKE) --no-print-directory install __LOG__
 
 
@@ -282,7 +297,7 @@ endif
 	@$(call echo,Makefile flavor: $(CMAKE_MAKEFILE_FLAVOR))
 	@$(call echo,Parallel jobs: $(JOBS))
 	@$(echo_lf)
-	@$(call echo,PAUSE = $(PAUSE) ($(if $(findstring 0,$(PAUSE)),will run in non-interactive mode,will pause between actions)))
+	@$(call echo,PAUSE = $(PAUSE) (use `PAUSE=` to get a list of allowed values))
 	@$(echo_lf)
 	@$(call echo,MAKE = $(MAKE))
 	@$(MAKE) --version
@@ -292,7 +307,7 @@ endif
 	@$(echo_lf)
 	@$(call echo,CXX = $(CXX))
 	@$(CXX) --version
-	@$(maybe_pause)
+	@$(maybe_pause_hard)
 	@$(call mkdir,./$(LOG_DIR))
 	@$(call mkdir,./$(LOG_DIR))
 
