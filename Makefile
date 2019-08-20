@@ -35,10 +35,6 @@ command:
 
 else
 
-# --- DEFAULT TARGET ---
-
-all:
-
 
 # --- DEFINITIONS ---
 
@@ -106,6 +102,7 @@ TMP_DIR := tmp
 LOG_DIR := $(OUTPUT_DIR)/logs
 
 override prefix := $(CURDIR)/$(OUTPUT_DIR)
+override build_info_file := $(LOG_DIR)/_buildinfo.txt
 
 override PKG_CONFIG_PATH :=
 export PKG_CONFIG_PATH
@@ -135,7 +132,7 @@ else ifeq ($(PAUSE),always)
 override maybe_pause := $(echo_lf) && $(pause) && $(echo_lf)
 override maybe_pause_hard := $(maybe_pause)
 else
-$(error Expected PAUSE to be one of: never sometimes always)
+$(error Expected PAUSE to be one of: never, sometimes, always)
 endif
 
 override make_version := $(shell $(MAKE) --version)
@@ -146,6 +143,14 @@ CMAKE_MAKEFILE_FLAVOR := "MSYS Makefiles"
 else
 CMAKE_MAKEFILE_FLAVOR := "Unix Makefiles"
 endif
+
+# Library pack name. Config file must override this.
+override name = $(error Config file doesn't specify package name)
+
+# Prints a short info about the build environment.
+# You can redirect the output as usual.
+# `grep -v InstalledDir` strips the installation directory from Clang output.
+override echo_build_info = (echo 'name = $(name)' && echo && echo 'CC:' && $(CC) --version && echo && echo 'CXX:' && $(CXX) --version) | grep -v InstalledDir
 
 # $1 is the build mode.
 # $2 is the log file name.
@@ -192,8 +197,8 @@ $4: $2
 	@$(call echo,Done. Moved log to `$4`)
 endef
 
-# Note the `|`. Without it, targets that inherit from `__prepare` are always rebuilt.
-override last_target := | __prepare
+# Note the `|`. Without it, derived targets are always rebuilt.
+override last_target := | __check_env
 
 # $1 is the pretty library name.
 override tmp_lib_log_name = $(LOG_DIR)/_incomplete.$1.log
@@ -261,19 +266,33 @@ endif
 
 # --- TARGETS ---
 
-.PHONY: all
-all: $(last_target)
+override final_archive := $(name).zip
+
+.DEFAULT_GOAL := $(final_archive)
+
+$(final_archive): $(last_target)
+	@$(call echo_lf)
+	@$(call echo,--- PACKAGING)
+	@$(maybe_pause_hard)
+	@$(call echo_lf)
+	@$(call echo,Temporarily renaming `$(OUTPUT_DIR)` to `$(name)`.)
+	@$(rmdir ./$(name))
+	@$(call move,./$(OUTPUT_DIR),./$(name))
+	@$(call echo,Making an archive...)
+	@zip -r $(final_archive) $(name) >/dev/null || ($(call move,./$(name),./$(OUTPUT_DIR)) && false)
+	@$(call move,./$(name),./$(OUTPUT_DIR))
 	@$(call echo_lf)
 	@$(call echo,--- CLEANING UP)
 	@$(call rmdir,./$(TMP_DIR))
-	@$(call echo_lf)
-	@$(call echo,--- DONE)
+
 	@$(call echo_lf)
 
 .PHONY: clean
 clean:
 	@$(call rmdir,./$(OUTPUT_DIR))
 	@$(call rmdir,./$(TMP_DIR))
+	@$(call rmdir,./$(name))
+	@$(call rmfile,./$(final_archive))
 
 
 .PHONY: here
@@ -287,6 +306,9 @@ __prepare:
 ifeq ($(MODE),)
 	$(error Please specify `MODE`. One of: $(mode_list))
 endif
+ifneq ($(wildcard $(final_archive)),)
+	$(info Nothing to do.)
+else
 	@$(if $(findstring $(MODE),-),$(error Please specify `MODE`. One of: $(mode_list)))
 	@$(if $(findstring $(space),$(CURDIR)),$(info WARNING: Current path contains spaces. This could be problematic.))
 	@$(echo_lf)
@@ -307,8 +329,22 @@ endif
 	@$(echo_lf)
 	@$(call echo,CXX = $(CXX))
 	@$(CXX) --version
+endif
+
+# An internal target.
+# Creates a log directory.
+# Then, if it's a clean build, saves some information about the build environment.
+# Otherwise makes sure that the environment didn't change too much since the first build.
+# Then, in any case, pauses.
+.PHONY: __check_env
+__check_env: __prepare
+ifeq ($(wildcard $(build_info_file)),)
+	@$(call mkdir,./$(LOG_DIR))
+	@$(echo_build_info) >>"$(build_info_file)"
+else
+	$(if $(strip $(shell $(echo_build_info) | cmp -s $(build_info_file) || echo foo)),$(info $(strip))$(error THE BUILD ENVIRONMENT HAS CHANGED. A CLEAN BUILD IS NECESSARY))
+endif
 	@$(maybe_pause_hard)
-	@$(call mkdir,./$(LOG_DIR))
-	@$(call mkdir,./$(LOG_DIR))
+
 
 endif

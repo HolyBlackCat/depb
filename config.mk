@@ -18,6 +18,7 @@
 
 # --- CONFIGURATION ---
 
+override name := imp-re_deps_v1
 override mode_list := windows-x86_64 generic
 
 
