@@ -7,6 +7,8 @@
 #   The convetional `-j4` isn't going to work here.)
 # To get a fully non-interactive build, add `PAUSE=never`.
 # Also you might want to set `CC` and `CXX` to override the environment default.
+# If you interrup the build, you can safely resume it later. But any library that wasn't
+#   built completely will be discarded and rebuilt.
 #
 # -- Clean the repo --
 # `make clean`
@@ -295,7 +297,7 @@ $(final_archive): $(last_target)
 	@$(call rmfile,./$(final_archive))
 	@$(call move,./$(OUTPUT_DIR),./$(name_and_mode))
 	@$(call echo,Making an archive...)
-	@zip -r $(final_archive) $(name_and_mode) >/dev/null || ($(call move,./$(name_and_mode),./$(OUTPUT_DIR)) && false)
+	@zip -qry $(final_archive) $(name_and_mode) || ($(call move,./$(name_and_mode),./$(OUTPUT_DIR)) && false)
 	@$(call move,./$(name_and_mode),./$(OUTPUT_DIR))
 	@$(call echo_lf)
 	@$(call echo,--- CLEANING UP)
@@ -318,7 +320,7 @@ ifneq ($(strip $(wildcard $(OUTPUT_DIR)) $(wildcard $(TMP_DIR))),)
 	$(error Please do `make clean` first)
 endif
 	@$(call rmfile,./$(sources_archive))
-	@zip -r $(sources_archive) . -x .git/\* >/dev/null
+	@zip -qry $(sources_archive) . -x .git/\*
 
 # An internal target.
 # Prints various info about the build configuration, and prepares things

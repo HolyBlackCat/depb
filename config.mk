@@ -1,8 +1,10 @@
 # --- HOW TO USE ---
 #
 # See `Makefile` for detailed instructions.
-# Example usage: (Windows x64, Clang)
-#   make PAUSE=never CC=clang CXX=clang++ MODE=windows-x86_64 JOBS=4
+# Example usage:
+# (Windows x32, Clang) ->  make PAUSE=never CC=clang CXX=clang++ MODE=windows-i686 JOBS=4
+# (Windows x64, Clang) ->  make PAUSE=never CC=clang CXX=clang++ MODE=windows-x86_64 JOBS=4
+# (Linux, Clang 8)     ->  make PAUSE=never CC=clang-8 CXX=clang++-8 MODE=linux JOBS=4
 
 # --- DEPENDENCIES ---
 #
@@ -25,7 +27,7 @@
 # --- CONFIGURATION ---
 
 override name := imp-re_deps_v1
-override mode_list := windows-i686 windows-x86_64 generic
+override mode_list := windows-i686 windows-x86_64 linux
 
 override is_windows := $(findstring windows,$(MODE))
 
@@ -37,7 +39,7 @@ ifneq ($(is_windows),)
 $(call Library,zlib,zlib-1.2.11.tar.gz,TarGzArchive,Custom,\
 	make -f win32/Makefile.gcc --no-print-directory "CC=$(CC)" "CXX=$(CXX)" -j$(JOBS) __LOG__ && \
 	make -f win32/Makefile.gcc --no-print-directory install "INCLUDE_PATH=$(prefix)/include" "LIBRARY_PATH=$(prefix)/lib" "BINARY_PATH=$(prefix)/bin" __LOG__)
-else ifeq ($(MODE),generic)
+else ifeq ($(MODE),linux)
 $(call Library,zlib,zlib-1.2.11.tar.gz,TarGzArchive,Custom,\
 	prefix="$(prefix)" ./configure __LOG__ && \
 	$(configuring_done) && \
@@ -68,7 +70,7 @@ ifeq ($(MODE),windows-i686)
 $(call Library,sdl2,SDL2-devel-2.0.10-mingw.tar.gz,TarGzArchive,Prebuilt,i686-w64-mingw32)
 else ifeq ($(MODE),windows-x86_64)
 $(call Library,sdl2,SDL2-devel-2.0.10-mingw.tar.gz,TarGzArchive,Prebuilt,x86_64-w64-mingw32)
-else ifeq ($(MODE),generic)
+else ifeq ($(MODE),linux)
 $(call Library,sdl2,SDL2-2.0.10.tar.gz,TarGzArchive,CMake)
 else ifneq ($(MODE),)
 $(error Not sure how to build sdl2 for this mode. Please fix `config.mk`.)
@@ -83,7 +85,7 @@ $(if $(wildcard $(openal_dsound_header)),,\
 	$(error `$(notdir $(openal_dsound_header))` not found in `$(dir $(openal_dsound_header))`.\
 	$(lf) If you're using MSYS2, go install `mingw-w64-x86_64-wined3d` package))
 override openal_flags += -DALSOFT_REQUIRE_DSOUND=TRUE -DDSOUND_INCLUDE_DIR=$(dir $(openal_dsound_header))
-else ifeq ($(MODE),generic)
+else ifeq ($(MODE),linux)
 # We're not on Windows, no extra flags needed.
 else ifneq ($(MODE),)
 $(error Not sure how to build openal for this mode. Please fix `config.mk`.)
