@@ -1,5 +1,27 @@
-# Nothing to see here.
+# --- HOW TO USE ---
+#
+# -- Build all libraries and archive the result --
+# `make MODE=...`
+# For the list of allowed modes, see `config.mk` or simply run `make` without extra flags.
+# Also you should add `JOBS=4` to the flags. (Replace 4 with the number of threads.
+#   The convetional `-j4` isn't going to work here.)
+# To get a fully non-interactive build, add `PAUSE=never`.
+# Also you might want to set `CC` and `CXX` to override the environment default.
+#
+# -- Clean the repo --
+# `make clean`
+# This cleans everything except for the source archives (in `./archives`)
+#   and the archived results (`./*.zip`).
+#
+# -- Archive the sources --
+# `make archive_sources`
+# This packages the entire current directory (except for `.git`).
+# It only works after `make clean`.
+#
+#
+# Other than that, theere is nothing to see in this file.
 # Go check `config.mk`.
+
 
 # --- GLOBAL CONFIGURATION ---
 
@@ -56,17 +78,7 @@ endef
 override rwildcard=$(foreach d,$(wildcard $1/*),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
 
 
-# --- DETECT ENVIRONMENT ---
-
-# Host OS.
-ifeq ($(OS),Windows_NT)
-HOST_OS ?= windows
-else
-HOST_OS ?= unix
-endif
-
-# Target OS.
-TARGET_OS ?= $(HOST_OS)
+# --- CHECK ENVIRONMENT ---
 
 # Make sure we're not in a Windows shell.
 ifeq ($(shell echo "foo"),"foo")
@@ -102,7 +114,6 @@ TMP_DIR := tmp
 LOG_DIR := $(OUTPUT_DIR)/logs
 
 override prefix := $(CURDIR)/$(OUTPUT_DIR)
-override build_info_file := $(LOG_DIR)/_buildinfo.txt
 
 override PKG_CONFIG_PATH :=
 export PKG_CONFIG_PATH
@@ -266,38 +277,48 @@ endif
 
 # --- TARGETS ---
 
-override final_archive := $(name).zip
+override name_and_mode := $(name)_$(MODE)
+override final_archive := $(name_and_mode).zip
+override build_info_file := $(LOG_DIR)/_buildinfo.txt
+override sources_archive := $(name)_sources.zip
 
 .DEFAULT_GOAL := $(final_archive)
 
+# Build all libraries.
 $(final_archive): $(last_target)
 	@$(call echo_lf)
 	@$(call echo,--- PACKAGING)
 	@$(maybe_pause_hard)
 	@$(call echo_lf)
-	@$(call echo,Temporarily renaming `$(OUTPUT_DIR)` to `$(name)`.)
-	@$(rmdir ./$(name))
-	@$(call move,./$(OUTPUT_DIR),./$(name))
+	@$(call echo,Temporarily renaming `$(OUTPUT_DIR)` to `$(name_and_mode)`.)
+	@$(call rmdir,./$(name_and_mode))
+	@$(call rmfile,./$(final_archive))
+	@$(call move,./$(OUTPUT_DIR),./$(name_and_mode))
 	@$(call echo,Making an archive...)
-	@zip -r $(final_archive) $(name) >/dev/null || ($(call move,./$(name),./$(OUTPUT_DIR)) && false)
-	@$(call move,./$(name),./$(OUTPUT_DIR))
+	@zip -r $(final_archive) $(name_and_mode) >/dev/null || ($(call move,./$(name_and_mode),./$(OUTPUT_DIR)) && false)
+	@$(call move,./$(name_and_mode),./$(OUTPUT_DIR))
 	@$(call echo_lf)
 	@$(call echo,--- CLEANING UP)
 	@$(call rmdir,./$(TMP_DIR))
 
 	@$(call echo_lf)
 
+# Clean everything, except archived source libraries and archived output.
 .PHONY: clean
 clean:
 	@$(call rmdir,./$(OUTPUT_DIR))
 	@$(call rmdir,./$(TMP_DIR))
-	@$(call rmdir,./$(name))
-	@$(call rmfile,./$(final_archive))
+	@$(call rmdir,./$(name_and_mode))
 
-
-.PHONY: here
-here:
-	@-$(subst $$$$,$,$(fix_pkgconfig_files))
+# Add library sources and the rest of the current directory to an archive.
+# This only works after `make clean`.
+.PHONY: archive_sources
+archive_sources:
+ifneq ($(strip $(wildcard $(OUTPUT_DIR)) $(wildcard $(TMP_DIR))),)
+	$(error Please do `make clean` first)
+endif
+	@$(call rmfile,./$(sources_archive))
+	@zip -r $(sources_archive) . -x .git/\* >/dev/null
 
 # An internal target.
 # Prints various info about the build configuration, and prepares things

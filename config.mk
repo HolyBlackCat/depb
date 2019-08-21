@@ -1,3 +1,9 @@
+# --- HOW TO USE ---
+#
+# See `Makefile` for detailed instructions.
+# Example usage: (Windows x64, Clang)
+#   make PAUSE=never CC=clang CXX=clang++ MODE=windows-x86_64 JOBS=4
+
 # --- DEPENDENCIES ---
 #
 # -- Required --
@@ -19,18 +25,26 @@
 # --- CONFIGURATION ---
 
 override name := imp-re_deps_v1
-override mode_list := windows-x86_64 generic
+override mode_list := windows-i686 windows-x86_64 generic
+
+override is_windows := $(findstring windows,$(MODE))
 
 
 # -- Utility libraries --
 
 # - Zlib
-ifeq ($(MODE),windows-x86_64)
+ifneq ($(is_windows),)
 $(call Library,zlib,zlib-1.2.11.tar.gz,TarGzArchive,Custom,\
-	make -f win32/Makefile.gcc --no-print-directory "CC=$(CC)" "CXX=$(CXX)" __LOG__ && \
+	make -f win32/Makefile.gcc --no-print-directory "CC=$(CC)" "CXX=$(CXX)" -j$(JOBS) __LOG__ && \
 	make -f win32/Makefile.gcc --no-print-directory install "INCLUDE_PATH=$(prefix)/include" "LIBRARY_PATH=$(prefix)/lib" "BINARY_PATH=$(prefix)/bin" __LOG__)
+else ifeq ($(MODE),generic)
+$(call Library,zlib,zlib-1.2.11.tar.gz,TarGzArchive,Custom,\
+	prefix="$(prefix)" ./configure __LOG__ && \
+	$(configuring_done) && \
+	make -j$(JOBS) __LOG__ && \
+	make install __LOG__)
 else ifneq ($(MODE),)
-$(error Not sure how to build zlib for this mode. Please fix `config.mk`.)
+$(error Not sure how to build sdl2 for this mode. Please fix `config.mk`.)
 endif
 
 # - Freetype
@@ -50,8 +64,12 @@ $(call Library,fmt,fmt_master-2aae6b1-aug-13-2019.tar.gz,TarGzArchive,CMake)
 # -- Media frameworks --
 
 # - SDL2
-ifeq ($(MODE),windows-x86_64)
+ifeq ($(MODE),windows-i686)
+$(call Library,sdl2,SDL2-devel-2.0.10-mingw.tar.gz,TarGzArchive,Prebuilt,i686-w64-mingw32)
+else ifeq ($(MODE),windows-x86_64)
 $(call Library,sdl2,SDL2-devel-2.0.10-mingw.tar.gz,TarGzArchive,Prebuilt,x86_64-w64-mingw32)
+else ifeq ($(MODE),generic)
+$(call Library,sdl2,SDL2-2.0.10.tar.gz,TarGzArchive,CMake)
 else ifneq ($(MODE),)
 $(error Not sure how to build sdl2 for this mode. Please fix `config.mk`.)
 endif
