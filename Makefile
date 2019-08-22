@@ -115,6 +115,10 @@ SOURCE_DIR := archives
 TMP_DIR := tmp
 LOG_DIR := $(OUTPUT_DIR)/logs
 
+ifeq ($(wildcard ./$(SOURCE_DIR)),)
+$(error Library sources not found in `./$(SOURCE_DIR)`. Go download them from 'Releases' on Github)
+endif
+
 override prefix := $(CURDIR)/$(OUTPUT_DIR)
 
 override PKG_CONFIG_PATH :=
@@ -173,7 +177,7 @@ override generic_build = $(call Build_$1,$2,$(call most_nested_entry,$(TMP_DIR))
 # This command should hopefully fix paths in all pkg-config files.
 # Better prefix it with `-` in case it can't find the directory.
 # Warning! Correctly expanding the dollar symbol is tricky. Make sure it's expanded just enough times.
-override fix_pkgconfig_files := find $(OUTPUT_DIR)/lib/pkgconfig -type f -name *.pc -exec sed -e "s|$(prefix)|\$$$${prefix}|g" -e "s|prefix=.*|prefix=$(prefix)|g" -i {} \;
+override fix_pkgconfig_files := find $(OUTPUT_DIR)/lib/pkgconfig -type f -name *.pc -exec sed -e "s|$(prefix)|\$$$${prefix}|g" -e "s|^prefix=.*|prefix=$(prefix)|g" -i {} \;
 
 # Each target overrides this with a build command.
 override __MAKE_EXECUTE_COMMAND__ :=
@@ -279,10 +283,13 @@ endif
 
 # --- TARGETS ---
 
-override name_and_mode := $(name)_$(MODE)
-override final_archive := $(name_and_mode).zip
 override build_info_file := $(LOG_DIR)/_buildinfo.txt
-override sources_archive := $(name)_sources.zip
+
+override final_archive_dir := $(name)_$(MODE)
+override final_archive := $(final_archive_dir).tar.gz
+
+override sources_archive_dir := $(name)_source-archives
+override sources_archive := $(sources_archive_dir).tar.gz
 
 .DEFAULT_GOAL := $(final_archive)
 
@@ -292,17 +299,10 @@ $(final_archive): $(last_target)
 	@$(call echo,--- PACKAGING)
 	@$(maybe_pause_hard)
 	@$(call echo_lf)
-	@$(call echo,Temporarily renaming `$(OUTPUT_DIR)` to `$(name_and_mode)`.)
-	@$(call rmdir,./$(name_and_mode))
 	@$(call rmfile,./$(final_archive))
-	@$(call move,./$(OUTPUT_DIR),./$(name_and_mode))
-	@$(call echo,Making an archive...)
-	@zip -qry $(final_archive) $(name_and_mode) || ($(call move,./$(name_and_mode),./$(OUTPUT_DIR)) && false)
-	@$(call move,./$(name_and_mode),./$(OUTPUT_DIR))
-	@$(call echo_lf)
+	@tar -cz --exclude=.git --transform="s|$(OUTPUT_DIR)/\(.*\)|$(final_archive_dir)/\1|" -f $(final_archive) $(OUTPUT_DIR)/*
 	@$(call echo,--- CLEANING UP)
 	@$(call rmdir,./$(TMP_DIR))
-
 	@$(call echo_lf)
 
 # Clean everything, except archived source libraries and archived output.
@@ -310,17 +310,14 @@ $(final_archive): $(last_target)
 clean:
 	@$(call rmdir,./$(OUTPUT_DIR))
 	@$(call rmdir,./$(TMP_DIR))
-	@$(call rmdir,./$(name_and_mode))
+	@$(call rmdir,./$(final_archive_dir))
 
 # Add library sources and the rest of the current directory to an archive.
 # This only works after `make clean`.
 .PHONY: archive_sources
 archive_sources:
-ifneq ($(strip $(wildcard $(OUTPUT_DIR)) $(wildcard $(TMP_DIR))),)
-	$(error Please do `make clean` first)
-endif
 	@$(call rmfile,./$(sources_archive))
-	@zip -qry $(sources_archive) . -x .git/\*
+	@tar -czf $(sources_archive) $(SOURCE_DIR)
 
 # An internal target.
 # Prints various info about the build configuration, and prepares things
@@ -329,9 +326,6 @@ __prepare:
 ifeq ($(MODE),)
 	$(error Please specify `MODE`. One of: $(mode_list))
 endif
-ifneq ($(wildcard $(final_archive)),)
-	$(info Nothing to do.)
-else
 	@$(if $(findstring $(MODE),-),$(error Please specify `MODE`. One of: $(mode_list)))
 	@$(if $(findstring $(space),$(CURDIR)),$(info WARNING: Current path contains spaces. This could be problematic.))
 	@$(echo_lf)
@@ -352,7 +346,6 @@ else
 	@$(echo_lf)
 	@$(call echo,CXX = $(CXX))
 	@$(CXX) --version
-endif
 
 # An internal target.
 # Creates a log directory.
