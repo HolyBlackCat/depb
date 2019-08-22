@@ -6,8 +6,8 @@
 # Also you should add `JOBS=4` to the flags. (Replace 4 with the number of threads.
 #   The convetional `-j4` isn't going to work here.)
 # To get a fully non-interactive build, add `PAUSE=never`.
-# Also you might want to set `CC` and `CXX` to override the environment default.
-# If you interrup the build, you can safely resume it later. But any library that wasn't
+# Also you might want to set `CC` and `CXX` to override the environment defaults.
+# If you interrupt the build, you can safely resume it later. But any library that wasn't
 #   built completely will be discarded and rebuilt.
 #
 # -- Clean the repo --
@@ -17,11 +17,10 @@
 #
 # -- Archive the sources --
 # `make archive_sources`
-# This packages the entire current directory (except for `.git`).
-# It only works after `make clean`.
+# This creates an archive with all library sources.
 #
 #
-# Other than that, theere is nothing to see in this file.
+# There is nothing more to see in this file.
 # Go check `config.mk`.
 
 

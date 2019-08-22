@@ -2,8 +2,10 @@
 
 This repository contains scripts for building dependencies for this [simple game engine](https://github.com/HolyBlackCat/imp-re) of mine.
 
+See `Makefile` for build instructions.
+
 ---
 
 Note that the repository contains only makefiles, but not library source archives.
 
-You probably want to grab [a release](https://github.com/HolyBlackCat/depb/releases) rather than cloning this repo. This way you'll get both scripts *and* library sources.
+You need to download source archives separately from [Releases](https://github.com/HolyBlackCat/depb/releases).
