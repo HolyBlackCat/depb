@@ -34,17 +34,13 @@ override mode_list := windows-i686 windows-x86_64 linux
 # Misc
 override is_windows := $(findstring windows,$(MODE))
 
-ifeq ($(MODE),linux)
-override LDFLAGS := -Wl,-rpath=.
-endif
-
 
 # -- Utility libraries --
 
 # - Zlib
 ifneq ($(is_windows),)
 $(call Library,zlib,zlib-1.2.11.tar.gz,TarArchive,Custom,\
-	make -f win32/Makefile.gcc --no-print-directory "CC=$(CC)" "CXX=$(CXX)" "CFLAGS=$(CFLAGS)" "CXXFLAGS=$(CXXFLAGS)" "LDFLAGS=$(LDFLAGS)" -j$(JOBS) __LOG__ && \
+	make -f win32/Makefile.gcc --no-print-directory $(call escape,"CC=$(CC)" "CXX=$(CXX)" "CFLAGS=$(CFLAGS)" "CXXFLAGS=$(CXXFLAGS)" "LDFLAGS=$(LDFLAGS)") -j$(JOBS) __LOG__ && \
 	make -f win32/Makefile.gcc --no-print-directory install "INCLUDE_PATH=$(prefix)/include" "LIBRARY_PATH=$(prefix)/lib" "BINARY_PATH=$(prefix)/bin" __LOG__)
 else ifeq ($(MODE),linux)
 $(call Library,zlib,zlib-1.2.11.tar.gz,TarArchive,Custom,\

@@ -220,7 +220,7 @@ override final_lib_log_name = $(LOG_DIR)/$1.log
 # $4 is the build mode.
 # $5 (opt) is the extra build parameters.
 override Library = \
-	$(eval $(call target_template,$1,$(last_target),$(call tmp_lib_log_name,$1),$(call final_lib_log_name,$1),$2,$3,$4,$5)) \
+	$(eval $(subst <dollar>,\$$$$$$$$,$(call target_template,$1,$(last_target),$(call tmp_lib_log_name,$1),$(call final_lib_log_name,$1),$2,$3,$4,$5))) \
 	$(eval override last_target := $(call final_lib_log_name,$1))
 
 # Unpack modes:
@@ -231,6 +231,10 @@ override Unpack_ZipArchive = unzip $1 -d $(TMP_DIR) $2
 
 # You can use this in your build modes to signal that the configuration step is finished.
 override configuring_done := $(call echo,Configuration finished$(comma) proceeding.) && $(maybe_pause)
+
+# Replaces `$` with `<dollar>`.
+# Each time you use `(C|CXX|LD)FLAGS` in a build command, it should be wrapped in `$(call escape,...)`.
+override escape = $(subst $$,<dollar>,$1)
 
 # Build modes:
 # $1 is the additional parameters.
@@ -251,8 +255,8 @@ override Build_ConfigureMake = \
 override Build_CMake = $(call cd,"__BUILD_DIR__") && \
 	$(call mkdir,build) && \
 	$(call cd,build) && \
-	cmake -Wno-dev -DCMAKE_C_COMPILER="$(CC)" -DCMAKE_CXX_COMPILER="$(CXX)" -DCMAKE_C_FLAGS="$(CFLAGS)" -DCMAKE_CXX_FLAGS="$(CXXFLAGS)" \
-		-DCMAKE_EXE_LINKER_FLAGS="$(LDFLAGS)" -DCMAKE_MODULE_LINKER_FLAGS="$(LDFLAGS)" -DCMAKE_SHARED_LINKER_FLAGS="$(LDFLAGS)" \
+	cmake -Wno-dev $(call escape,-DCMAKE_C_COMPILER="$(CC)" -DCMAKE_CXX_COMPILER="$(CXX)" -DCMAKE_C_FLAGS="$(CFLAGS)" -DCMAKE_CXX_FLAGS="$(CXXFLAGS)" \
+		-DCMAKE_EXE_LINKER_FLAGS="$(LDFLAGS)" -DCMAKE_MODULE_LINKER_FLAGS="$(LDFLAGS)" -DCMAKE_SHARED_LINKER_FLAGS="$(LDFLAGS)") \
 		-DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$(prefix)" -DCMAKE_SYSTEM_PREFIX_PATH=$(prefix) $1 -G $(CMAKE_MAKEFILE_FLAVOR) .. __LOG__ && \
 	$(configuring_done) && \
 	$(MAKE) --no-print-directory -j$(JOBS) __LOG__ && \
