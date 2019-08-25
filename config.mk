@@ -24,23 +24,30 @@
 #   E.g. if a library uses autotools, use `./configure --help` to figure out what optional dependencies it has.
 #   Then use `--with-*` or `--without-*` to enable or disable each one.
 
+
 # --- CONFIGURATION ---
 
-override name := imp-re_deps_v1
+# Required variables
+override name := imp-re_deps_v1.0
 override mode_list := windows-i686 windows-x86_64 linux
 
+# Misc
 override is_windows := $(findstring windows,$(MODE))
+
+ifeq ($(MODE),linux)
+override LDFLAGS := -Wl,-rpath=.
+endif
 
 
 # -- Utility libraries --
 
 # - Zlib
 ifneq ($(is_windows),)
-$(call Library,zlib,zlib-1.2.11.tar.gz,TarGzArchive,Custom,\
-	make -f win32/Makefile.gcc --no-print-directory "CC=$(CC)" "CXX=$(CXX)" -j$(JOBS) __LOG__ && \
+$(call Library,zlib,zlib-1.2.11.tar.gz,TarArchive,Custom,\
+	make -f win32/Makefile.gcc --no-print-directory "CC=$(CC)" "CXX=$(CXX)" "CFLAGS=$(CFLAGS)" "CXXFLAGS=$(CXXFLAGS)" "LDFLAGS=$(LDFLAGS)" -j$(JOBS) __LOG__ && \
 	make -f win32/Makefile.gcc --no-print-directory install "INCLUDE_PATH=$(prefix)/include" "LIBRARY_PATH=$(prefix)/lib" "BINARY_PATH=$(prefix)/bin" __LOG__)
 else ifeq ($(MODE),linux)
-$(call Library,zlib,zlib-1.2.11.tar.gz,TarGzArchive,Custom,\
+$(call Library,zlib,zlib-1.2.11.tar.gz,TarArchive,Custom,\
 	prefix="$(prefix)" ./configure __LOG__ && \
 	$(configuring_done) && \
 	make -j$(JOBS) __LOG__ && \
@@ -50,28 +57,28 @@ $(error Not sure how to build sdl2 for this mode. Please fix `config.mk`.)
 endif
 
 # - Freetype
-$(call Library,freetype,freetype-2.10.1.tar.gz,TarGzArchive,ConfigureMake,\
+$(call Library,freetype,freetype-2.10.1.tar.gz,TarArchive,ConfigureMake,\
 	--with-zlib --without-bzip2 --without-png --without-harfbuzz)
 
 # - Ogg
-$(call Library,ogg,libogg-1.3.3.tar.gz,TarGzArchive,ConfigureMake)
+$(call Library,ogg,libogg-1.3.3.tar.gz,TarArchive,ConfigureMake)
 
 # - Vorbis
-$(call Library,vorbis,libvorbis-1.3.6.tar.gz,TarGzArchive,ConfigureMake)
+$(call Library,vorbis,libvorbis-1.3.6.tar.gz,TarArchive,ConfigureMake)
 
 # - Fmt
-$(call Library,fmt,fmt_master-2aae6b1-aug-13-2019.tar.gz,TarGzArchive,CMake)
+$(call Library,fmt,fmt_master-2aae6b1-aug-13-2019.tar.gz,TarArchive,CMake)
 
 
 # -- Media frameworks --
 
 # - SDL2
 ifeq ($(MODE),windows-i686)
-$(call Library,sdl2,SDL2-devel-2.0.10-mingw.tar.gz,TarGzArchive,Prebuilt,i686-w64-mingw32)
+$(call Library,sdl2,SDL2-devel-2.0.10-mingw.tar.gz,TarArchive,Prebuilt,i686-w64-mingw32)
 else ifeq ($(MODE),windows-x86_64)
-$(call Library,sdl2,SDL2-devel-2.0.10-mingw.tar.gz,TarGzArchive,Prebuilt,x86_64-w64-mingw32)
+$(call Library,sdl2,SDL2-devel-2.0.10-mingw.tar.gz,TarArchive,Prebuilt,x86_64-w64-mingw32)
 else ifeq ($(MODE),linux)
-$(call Library,sdl2,SDL2-2.0.10.tar.gz,TarGzArchive,CMake)
+$(call Library,sdl2,SDL2-2.0.10.tar.gz,TarArchive,CMake)
 else ifneq ($(MODE),)
 $(error Not sure how to build sdl2 for this mode. Please fix `config.mk`.)
 endif
@@ -90,4 +97,4 @@ else ifeq ($(MODE),linux)
 else ifneq ($(MODE),)
 $(error Not sure how to build openal for this mode. Please fix `config.mk`.)
 endif
-$(call Library,openal,openal-soft-1.19.1.tar.bz2,TarGzArchive,CMake,$(openal_flags))
+$(call Library,openal,openal-soft-1.19.1.tar.bz2,TarArchive,CMake,$(openal_flags))

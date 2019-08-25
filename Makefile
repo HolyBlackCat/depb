@@ -70,14 +70,6 @@ $(strip)
 $(strip)
 endef
 
-# A recursive wildcard function.
-# Source: https://stackoverflow.com/a/18258352/2752075
-# Recursively searches a directory for all files matching a pattern.
-# The first parameter is a directory, the second is a pattern.
-# Example usage: SOURCES = $(call rwildcard, src, *.c *.cpp)
-# This implementation differs from the original. It was changed to correctly handle directory names without trailing `/`.
-override rwildcard=$(foreach d,$(wildcard $1/*),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
-
 
 # --- CHECK ENVIRONMENT ---
 
@@ -166,7 +158,9 @@ override name = $(error Config file doesn't specify package name)
 # Prints a short info about the build environment.
 # You can redirect the output as usual.
 # `grep -v InstalledDir` strips the installation directory from Clang output.
-override echo_build_info = (echo 'name = $(name)' && echo && echo 'CC:' && $(CC) --version && echo && echo 'CXX:' && $(CXX) --version) | grep -v InstalledDir
+override echo_build_info = (echo 'name = $(name)' && echo 'MODE = $(MODE)' && echo && \
+	((echo 'CC:' && $(CC) --version && echo && echo 'CXX:' && $(CXX) --version) | grep -v InstalledDir) && echo && \
+	echo 'CFLAGS = $(CFLAGS)' && echo 'CXXFLAGS = $(CXXFLAGS)' && echo 'LDFLAGS = $(LDFLAGS)')
 
 # $1 is the build mode.
 # $2 is the log file name.
@@ -232,7 +226,7 @@ override Library = \
 # Unpack modes:
 # $1 is the archive name.
 # $2 is the log file name, written as `>>"/foo/foo.log" 2>&1`.
-override Unpack_TarGzArchive = tar -C $(TMP_DIR) -x -f $1 $2
+override Unpack_TarArchive = tar -C $(TMP_DIR) -x -f $1 $2
 override Unpack_ZipArchive = unzip $1 -d $(TMP_DIR) $2
 
 # You can use this in your build modes to signal that the configuration step is finished.
@@ -257,7 +251,9 @@ override Build_ConfigureMake = \
 override Build_CMake = $(call cd,"__BUILD_DIR__") && \
 	$(call mkdir,build) && \
 	$(call cd,build) && \
-	cmake -Wno-dev -DCMAKE_C_COMPILER="$(CC)" -DCMAKE_CXX_COMPILER="$(CXX)" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$(prefix)" -DCMAKE_SYSTEM_PREFIX_PATH=$(prefix) $1 -G $(CMAKE_MAKEFILE_FLAVOR) .. __LOG__ && \
+	cmake -Wno-dev -DCMAKE_C_COMPILER="$(CC)" -DCMAKE_CXX_COMPILER="$(CXX)" -DCMAKE_C_FLAGS="$(CFLAGS)" -DCMAKE_CXX_FLAGS="$(CXXFLAGS)" \
+		-DCMAKE_EXE_LINKER_FLAGS="$(LDFLAGS)" -DCMAKE_MODULE_LINKER_FLAGS="$(LDFLAGS)" -DCMAKE_SHARED_LINKER_FLAGS="$(LDFLAGS)" \
+		-DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$(prefix)" -DCMAKE_SYSTEM_PREFIX_PATH=$(prefix) $1 -G $(CMAKE_MAKEFILE_FLAVOR) .. __LOG__ && \
 	$(configuring_done) && \
 	$(MAKE) --no-print-directory -j$(JOBS) __LOG__ && \
 	$(MAKE) --no-print-directory install __LOG__
@@ -267,6 +263,13 @@ override Build_CMake = $(call cd,"__BUILD_DIR__") && \
 
 MODE :=
 override MODE := $(strip $(MODE))
+
+override CFLAGS :=
+override CXXFLAGS :=
+override LDFLAGS :=
+export CFLAGS
+export CXXFLAGS
+export LDFLAGS
 
 include config.mk
 
