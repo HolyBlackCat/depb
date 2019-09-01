@@ -291,8 +291,8 @@ endif
 
 override build_info_file := $(LOG_DIR)/_buildinfo.txt
 
-override final_archive_dir := $(name)_$(MODE)
-override final_archive := $(final_archive_dir).tar.gz
+override final_archive_dir := $(name)
+override final_archive := $(final_archive_dir)_$(MODE).tar.gz
 
 override sources_archive_dir := $(name)_source-archives
 override sources_archive := $(sources_archive_dir).tar.gz
