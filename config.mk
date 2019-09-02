@@ -13,6 +13,9 @@
 #   If you're using MSYS2, get it by installing `mingw-w64-x86_64-wined3d` package.
 #   If you downloaded MinGW-w64 separately, you should already have it.
 #
+# On Linux, OpenAL needs some decent backend.
+#   I heard ALSA is good, so get the `libasound2-dev` package.
+#
 # -- Optional --
 # You probably want Doxygen for generating documentation.
 #   On MSYS2 it comes in `mingw-w64-x86_64-doxygen` package.
@@ -63,7 +66,7 @@ $(call Library,ogg,libogg-1.3.3.tar.gz,TarArchive,ConfigureMake)
 $(call Library,vorbis,libvorbis-1.3.6.tar.gz,TarArchive,ConfigureMake)
 
 # - Fmt
-$(call Library,fmt,fmt_master-2aae6b1-aug-13-2019.tar.gz,TarArchive,CMake)
+$(call Library,fmt,fmt-6.0.0.tar.gz,TarArchive,CMake)
 
 
 # -- Media frameworks --
@@ -74,7 +77,9 @@ $(call Library,sdl2,SDL2-devel-2.0.10-mingw.tar.gz,TarArchive,Prebuilt,i686-w64-
 else ifeq ($(MODE),windows-x86_64)
 $(call Library,sdl2,SDL2-devel-2.0.10-mingw.tar.gz,TarArchive,Prebuilt,x86_64-w64-mingw32)
 else ifeq ($(MODE),linux)
-$(call Library,sdl2,SDL2-2.0.10.tar.gz,TarArchive,CMake)
+# We're not going to build SDL2 from sources, since it requires many
+# dependencies to get a proper build, and I'm not sure which ones exactly.
+# Let's rely on preinstalled SDL2.
 else ifneq ($(MODE),)
 $(error Not sure how to build sdl2 for this mode. Please fix `config.mk`.)
 endif

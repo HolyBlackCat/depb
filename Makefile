@@ -106,8 +106,8 @@ SOURCE_DIR := archives
 TMP_DIR := tmp
 LOG_DIR := $(OUTPUT_DIR)/logs
 
-ifeq ($(wildcard ./$(SOURCE_DIR)),)
-$(error Library sources not found in `./$(SOURCE_DIR)`. Go download them from 'Releases' on Github)
+ifeq ($(wildcard ./$(SOURCE_DIR)/*),)
+$(error Library sources not found in `./$(SOURCE_DIR)`. Go download them from 'Releases' page on Github)
 endif
 
 override prefix := $(CURDIR)/$(OUTPUT_DIR)
