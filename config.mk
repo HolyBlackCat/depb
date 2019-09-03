@@ -8,18 +8,16 @@
 
 # --- DEPENDENCIES ---
 #
-# -- Required --
-# On Windows, OpenAL needs `dsound.h`.
-#   If you're using MSYS2, get it by installing `mingw-w64-x86_64-wined3d` package.
-#   If you downloaded MinGW-w64 separately, you should already have it.
+# About SDL2:
+#   On Linux, we rely on an external SDL2. Install it from `libsdl2-dev`.
 #
-# On Linux, OpenAL needs some decent backend.
-#   I heard ALSA is good, so get the `libasound2-dev` package.
+# About OpenAL:
+#   On Windows, OpenAL should have `dsound.h` for the DirectSound backend.
+#     If you're using MSYS2, get it by installing `mingw-w64-x86_64-wined3d` package.
+#     If you downloaded MinGW-w64 separately, you should already have it.
+#   On Linux, OpenAL should have ALSA, OSS, and PulseAudio backends.
+#     You can get liraries for them from following packages: libasound2-dev oss4-dev libpulse-dev
 #
-# -- Optional --
-# You probably want Doxygen for generating documentation.
-#   On MSYS2 it comes in `mingw-w64-x86_64-doxygen` package.
-
 # --- ADVICE ---
 #
 # When adding a library, check if it has any significant optional dependencies.
@@ -94,7 +92,7 @@ $(if $(wildcard $(openal_dsound_header)),,\
 	$(lf) If you're using MSYS2, go install `mingw-w64-x86_64-wined3d` package))
 override openal_flags += -DALSOFT_REQUIRE_DSOUND=TRUE -DDSOUND_INCLUDE_DIR=$(dir $(openal_dsound_header))
 else ifeq ($(MODE),linux)
-# We're not on Windows, no extra flags needed.
+override openal_flags += -DALSOFT_REQUIRE_ALSA=TRUE -DALSOFT_REQUIRE_OSS=TRUE -DALSOFT_REQUIRE_PULSEAUDIO=TRUE
 else ifneq ($(MODE),)
 $(error Not sure how to build openal for this mode. Please fix `config.mk`.)
 endif
