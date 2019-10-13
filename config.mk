@@ -4,7 +4,7 @@
 # Example usage:
 # (Windows x32, Clang) ->  make PAUSE=never CC=clang CXX=clang++ MODE=windows-i686 JOBS=4
 # (Windows x64, Clang) ->  make PAUSE=never CC=clang CXX=clang++ MODE=windows-x86_64 JOBS=4
-# (Linux, Clang 8)     ->  make PAUSE=never CC=clang-8 CXX=clang++-8 MODE=linux JOBS=4
+# (Linux, Clang 9)     ->  make PAUSE=never CC=clang-9 CXX=clang++-9 MODE=linux JOBS=4
 
 # --- DEPENDENCIES ---
 #
@@ -29,7 +29,7 @@
 # --- CONFIGURATION ---
 
 # Required variables
-override name := imp-re_deps_v1.0
+override name := imp-re_deps_2019-10-14
 override mode_list := windows-i686 windows-x86_64 linux
 
 # Misc
@@ -58,7 +58,7 @@ $(call Library,freetype,freetype-2.10.1.tar.gz,TarArchive,ConfigureMake,\
 	--with-zlib --without-bzip2 --without-png --without-harfbuzz)
 
 # - Ogg
-$(call Library,ogg,libogg-1.3.3.tar.gz,TarArchive,ConfigureMake)
+$(call Library,ogg,libogg-1.3.4.tar.gz,TarArchive,ConfigureMake)
 
 # - Vorbis
 $(call Library,vorbis,libvorbis-1.3.6.tar.gz,TarArchive,ConfigureMake)
@@ -83,7 +83,7 @@ $(error Not sure how to build sdl2 for this mode. Please fix `config.mk`.)
 endif
 
 # - OpenAL
-override openal_flags :=
+override openal_flags := -DALSOFT_EXAMPLES=FALSE
 ifeq ($(MODE),windows-x86_64)
 # We're on Windows. Make sure we're building with DirectSound backend.
 override openal_dsound_header := /mingw64/x86_64-w64-mingw32/include/dsound.h
