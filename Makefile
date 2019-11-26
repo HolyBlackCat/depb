@@ -167,10 +167,20 @@ override echo_build_info = (echo 'name = $(name)' && echo 'MODE = $(MODE)' && ec
 # $3 is the additional build parameters.
 override generic_build = $(call Build_$1,$2,$(call most_nested_entry,$(TMP_DIR)),$3)
 
+# A crude function to convert a path to the Windows style.
+# `/c/foo/bar` -> `c:\foo\bar`
+override to_windows_path = $(subst <, ,$(subst $(space),\,$(join $(subst /, ,$(subst $(space),<,$1)),:)))
+
 # This command should hopefully fix paths in all pkg-config files.
 # Better prefix it with `-` in case it can't find the directory.
 # Warning! Correctly expanding the dollar symbol is tricky. Make sure it's expanded just enough times.
-override fix_pkgconfig_files := find $(OUTPUT_DIR)/lib/pkgconfig -type f -name *.pc -exec sed -e "s|$(prefix)|\$$$${prefix}|g" -e "s|^prefix=.*|prefix=$(prefix)|g" -i {} \;
+# Note that we use a separate regular expression to replace Windows paths (this was observed to be necessary for some libraries even under MSYS2, e.g. for libfmt).
+# We could make sure it's used only on Windows, but eh.
+override fix_pkgconfig_files := \
+	find $(OUTPUT_DIR)/lib/pkgconfig -type f -name *.pc -exec sed \
+	-e "s|$(prefix)|\$$$${prefix}|g" \
+	-e "s|$(subst \,[\/],$(call to_windows_path,$(prefix)))|\$$$${prefix}|ig" \
+	-e "s|^prefix=.*|prefix=$(prefix)|g" -i {} \;
 
 # Each target overrides this with a build command.
 override __MAKE_EXECUTE_COMMAND__ :=
