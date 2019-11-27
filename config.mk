@@ -66,6 +66,9 @@ $(call Library,vorbis,libvorbis-1.3.6.tar.gz,TarArchive,ConfigureMake)
 # - Fmt
 $(call Library,fmt,fmt-6.0.0.tar.gz,TarArchive,CMake)
 
+# - Double-conversion
+$(call Library,double-conversion,double-conversion-3.1.5+git-trunk-a54561b.tar.gz,TarArchive,CMake)
+
 
 # -- Media frameworks --
 

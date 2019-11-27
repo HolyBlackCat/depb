@@ -92,7 +92,7 @@ override move = mv -f $1 $2
 override touch = touch $1
 override echo = echo '$(subst ','"'"',$1)'
 override echo_lf := echo
-override pause := read -s -n 1 -p "Press any key to continue . . ." && echo
+override pause := bash -c 'read -s -n 1 -p "Press any key to continue . . ." && echo'
 # - Functions
 override native_path = $1
 override dir_target_name = $1
@@ -211,6 +211,7 @@ $4: $2
 	@$(maybe_pause)
 	@$(call echo,Building... [$7])
 	@$(MAKE) --no-print-directory -C $(TMP_DIR) -f $(CURDIR)/Makefile $(filter --trace,$(_MAKEFLAGS))
+	@$(if $(wildcard $(SOURCE_DIR)/$1.pc),mkdir -p '$(prefix)/lib/pkgconfig' && cp -f '$(SOURCE_DIR)/$1.pc' '$(prefix)/lib/pkgconfig/')
 	@-$(fix_pkgconfig_files)
 	@$(maybe_pause)
 	@$(call move,$3,$4)
@@ -229,6 +230,7 @@ override final_lib_log_name = $(LOG_DIR)/$1.log
 # $3 is the unpack mode.
 # $4 is the build mode.
 # $5 (opt) is the extra build parameters.
+# If the archive directory contains a `$1.pc` file, it will be used as a pkg-config file for this library.
 override Library = \
 	$(eval $(subst <dollar>,\$$$$$$$$,$(call target_template,$1,$(last_target),$(call tmp_lib_log_name,$1),$(call final_lib_log_name,$1),$2,$3,$4,$5))) \
 	$(eval override last_target := $(call final_lib_log_name,$1))
