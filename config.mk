@@ -29,7 +29,7 @@
 # --- CONFIGURATION ---
 
 # Required variables
-override name := imp-re_deps_2019-10-14
+override name := imp-re_deps_2019-11-27
 override mode_list := windows-i686 windows-x86_64 linux
 
 # Misc
