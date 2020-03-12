@@ -2,9 +2,10 @@
 #
 # See `Makefile` for detailed instructions.
 # Example usage:
-# (Windows x32, Clang) ->  make PAUSE=never CC=clang CXX=clang++ MODE=windows-i686 JOBS=4
-# (Windows x64, Clang) ->  make PAUSE=never CC=clang CXX=clang++ MODE=windows-x86_64 JOBS=4
-# (Linux, Clang 9)     ->  make PAUSE=never CC=clang-9 CXX=clang++-9 MODE=linux JOBS=4
+#   (Windows x32, Clang) ->  make PAUSE=never CC=clang CXX=clang++ CXXFLAGS=-femulated-tls MODE=windows-i686 JOBS=4
+#   (Windows x64, Clang) ->  make PAUSE=never CC=clang CXX=clang++ CXXFLAGS=-femulated-tls MODE=windows-x86_64 JOBS=4
+#   (Linux, Clang 9)     ->  make PAUSE=never CC=clang-9 CXX=clang++-9 CXXFLAGS=-femulated-tls MODE=linux JOBS=4
+# `-femulated-tls` is needed when using Clang with libstdc++, if atomics are used.
 
 # --- DEPENDENCIES ---
 #
@@ -29,7 +30,7 @@
 # --- CONFIGURATION ---
 
 # Required variables
-override name := imp-re_deps_2019-11-27
+override name := imp-re_deps_2020-03-12
 override mode_list := windows-i686 windows-x86_64 linux
 
 # Misc
@@ -64,7 +65,7 @@ $(call Library,ogg,libogg-1.3.4.tar.gz,TarArchive,ConfigureMake)
 $(call Library,vorbis,libvorbis-1.3.6.tar.gz,TarArchive,ConfigureMake)
 
 # - Fmt
-$(call Library,fmt,fmt-6.0.0.tar.gz,TarArchive,CMake)
+$(call Library,fmt,fmt-6.1.2.zip,ZipArchive,CMake)
 
 # - Double-conversion
 $(call Library,double-conversion,double-conversion-3.1.5+git-trunk-a54561b.tar.gz,TarArchive,CMake)
@@ -74,9 +75,9 @@ $(call Library,double-conversion,double-conversion-3.1.5+git-trunk-a54561b.tar.g
 
 # - SDL2
 ifeq ($(MODE),windows-i686)
-$(call Library,sdl2,SDL2-devel-2.0.10-mingw.tar.gz,TarArchive,Prebuilt,i686-w64-mingw32)
+$(call Library,sdl2,SDL2-devel-2.0.12-mingw.tar.gz,TarArchive,Prebuilt,i686-w64-mingw32)
 else ifeq ($(MODE),windows-x86_64)
-$(call Library,sdl2,SDL2-devel-2.0.10-mingw.tar.gz,TarArchive,Prebuilt,x86_64-w64-mingw32)
+$(call Library,sdl2,SDL2-devel-2.0.12-mingw.tar.gz,TarArchive,Prebuilt,x86_64-w64-mingw32)
 else ifeq ($(MODE),linux)
 # We're not going to build SDL2 from sources, since it requires many
 # dependencies to get a proper build, and I'm not sure which ones exactly.
@@ -99,4 +100,4 @@ override openal_flags += -DALSOFT_REQUIRE_ALSA=TRUE -DALSOFT_REQUIRE_OSS=TRUE -D
 else ifneq ($(MODE),)
 $(error Not sure how to build openal for this mode. Please fix `config.mk`.)
 endif
-$(call Library,openal,openal-soft-1.19.1.tar.bz2,TarArchive,CMake,$(openal_flags))
+$(call Library,openal,openal-soft-1.20.1.tar.bz2,TarArchive,CMake,$(openal_flags))

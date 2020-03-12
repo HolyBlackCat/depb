@@ -280,9 +280,9 @@ override Build_CMake = $(call cd,"__BUILD_DIR__") && \
 MODE :=
 override MODE := $(strip $(MODE))
 
-override CFLAGS :=
-override CXXFLAGS :=
-override LDFLAGS :=
+CFLAGS :=
+CXXFLAGS :=
+LDFLAGS :=
 export CFLAGS
 export CXXFLAGS
 export LDFLAGS
@@ -304,7 +304,7 @@ endif
 override build_info_file := $(LOG_DIR)/_buildinfo.txt
 
 override final_archive_dir := $(name)
-override final_archive := $(final_archive_dir)_$(MODE).tar.gz
+override final_archive := $(final_archive_dir)_prebuilt_$(MODE).tar.gz
 
 override sources_archive_dir := $(name)_source-archives
 override sources_archive := $(sources_archive_dir).tar.gz
