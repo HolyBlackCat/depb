@@ -4,7 +4,7 @@
 # Example usage:
 #   (Windows x32, Clang) ->  make PAUSE=never CC=clang CXX=clang++ CXXFLAGS=-femulated-tls MODE=windows-i686 JOBS=4
 #   (Windows x64, Clang) ->  make PAUSE=never CC=clang CXX=clang++ CXXFLAGS=-femulated-tls MODE=windows-x86_64 JOBS=4
-#   (Linux, Clang 9)     ->  make PAUSE=never CC=clang-9 CXX=clang++-9 CXXFLAGS=-femulated-tls MODE=linux JOBS=4
+#   (Linux, Clang 9)     ->  make PAUSE=never CC=clang-9 CXX=clang++-9 MODE=linux JOBS=4
 # `-femulated-tls` is needed when using Clang with libstdc++, if atomics are used.
 
 # --- DEPENDENCIES ---
