@@ -2,9 +2,11 @@
 #
 # See `Makefile` for detailed instructions.
 # Example usage:
-#   (Windows x32, Clang) ->  make PAUSE=never CC=clang CXX=clang++ CXXFLAGS=-femulated-tls MODE=windows-i686 JOBS=4
-#   (Windows x64, Clang) ->  make PAUSE=never CC=clang CXX=clang++ CXXFLAGS=-femulated-tls MODE=windows-x86_64 JOBS=4
-#   (Linux, Clang 9)     ->  make PAUSE=never CC=clang-9 CXX=clang++-9 MODE=linux JOBS=4
+#   (Windows x32, MSYS2 Clang)   ->  make PAUSE=never CC=clang CXX=clang++ CXXFLAGS=-femulated-tls MODE=windows-i686 JOBS=4
+#   (Windows x64, MSYS2 Clang)   ->  make PAUSE=never CC=clang CXX=clang++ CXXFLAGS=-femulated-tls MODE=windows-x86_64 JOBS=4
+#   (Windows x32, Vanilla Clang) ->  make PAUSE=never CC="clang --target=i686-w64-windows-gnu" CXX="clang++ --target=i686-w64-windows-gnu" CPP=cpp CXXFLAGS=-femulated-tls LDFLAGS=-pthread MODE=windows-i686 JOBS=4
+#   (Windows x64, Vanilla Clang) ->  make PAUSE=never CC="clang --target=x86_64-w64-windows-gnu" CXX="clang++ --target=x86_64-w64-windows-gnu" CPP=cpp CXXFLAGS=-femulated-tls LDFLAGS=-pthread MODE=windows-x86_64 JOBS=4
+#   (Linux, Clang 10)            ->  make PAUSE=never CC=clang-10 CXX=clang++-10 MODE=linux JOBS=4
 # `-femulated-tls` is needed when using Clang with libstdc++, if atomics are used.
 
 # --- DEPENDENCIES ---
@@ -30,7 +32,7 @@
 # --- CONFIGURATION ---
 
 # Required variables
-override name := imp-re_deps_2020-03-12
+override name := imp-re_deps_2020-04-10
 override mode_list := windows-i686 windows-x86_64 linux
 
 # Misc
@@ -42,7 +44,7 @@ override is_windows := $(findstring windows,$(MODE))
 # - Zlib
 ifneq ($(is_windows),)
 $(call Library,zlib,zlib-1.2.11.tar.gz,TarArchive,Custom,\
-	make -f win32/Makefile.gcc --no-print-directory $(call escape,"CC=$(CC)" "CXX=$(CXX)" "CFLAGS=$(CFLAGS)" "CXXFLAGS=$(CXXFLAGS)" "LDFLAGS=$(LDFLAGS)") -j$(JOBS) __LOG__ && \
+	make -f win32/Makefile.gcc --no-print-directory $(call escape,"CC=$(CC)" "CXX=$(CXX)" "CPP=$(CPP)" "CFLAGS=$(CFLAGS)" "CXXFLAGS=$(CXXFLAGS)" "LDFLAGS=$(LDFLAGS)") -j$(JOBS) __LOG__ && \
 	make -f win32/Makefile.gcc --no-print-directory install "INCLUDE_PATH=$(prefix)/include" "LIBRARY_PATH=$(prefix)/lib" "BINARY_PATH=$(prefix)/bin" __LOG__)
 else ifeq ($(MODE),linux)
 $(call Library,zlib,zlib-1.2.11.tar.gz,TarArchive,Custom,\
@@ -65,7 +67,7 @@ $(call Library,ogg,libogg-1.3.4.tar.gz,TarArchive,ConfigureMake)
 $(call Library,vorbis,libvorbis-1.3.6.tar.gz,TarArchive,ConfigureMake)
 
 # - Fmt
-$(call Library,fmt,fmt-6.1.2.zip,ZipArchive,CMake)
+$(call Library,fmt,fmt-6.2.0.zip,ZipArchive,CMake)
 
 # - Double-conversion
 $(call Library,double-conversion,double-conversion-3.1.5+git-trunk-a54561b.tar.gz,TarArchive,CMake)

@@ -121,6 +121,8 @@ CC ?= $(error Variable not specified: `CC`)
 export CC
 CXX ?= $(error Variable not specified: `CXX`)
 export CXX
+CPP ?= # Empty string should be good enough in most cases.
+export CPP
 
 # The amount of parallel jobs to run.
 JOBS := 1
@@ -253,22 +255,39 @@ override escape = $(subst $$,<dollar>,$1)
 # __LOG__ (not a variable) is the log file name, written as `>>"/foo/foo.log"`.
 # We can't put __LOG__ into a parameter, because then user wouldn't be able to use it in $1.
 # __BUILD_DIR__ (not a variable) is the build directory.
+
+# Mode: Prebuilt
+# Copies the files directly to the output directory.
+# If the custom parameter is specified, it's treated as a name of a subdirectory that should be copied. Otherwise everything is copied.
+# Custom parameters are ignored.
 override Build_Prebuilt = \
 	@$(call copy,"__BUILD_DIR__$(if $(strip $1),/$(strip $1))"/*,"$(prefix)") __LOG__
+# Mode: Custom
+# Custom parameters are executed as a command, nothing else happens.
 override Build_Custom = \
 	$(call cd,"__BUILD_DIR__") && \
 	$1
+# Mode: ConfigureMake
+# Runs: ./configure, make, make install
+# Custom parameters are passed to ./configure.
+# Except parameters starting with ` are treated as env variable assignments, passed to all three commands (with leading ` stripped).
 override Build_ConfigureMake = \
 	$(call cd,"__BUILD_DIR__") && \
-	./configure "--prefix=$(prefix)" $1 __LOG__ && \
+	$(patsubst `%,%,$(filter `%,$1)) ./configure "--prefix=$(prefix)" $(filter-out `%,$1) __LOG__ && \
 	$(configuring_done) && \
-	$(MAKE) --no-print-directory -j$(JOBS) __LOG__ && \
-	$(MAKE) --no-print-directory install __LOG__
+	$(patsubst `%,%,$(filter `%,$1)) $(MAKE) --no-print-directory -j$(JOBS) __LOG__ && \
+	$(patsubst `%,%,$(filter `%,$1)) $(MAKE) --no-print-directory install __LOG__
+# Mode CMake
+# Runs: cmake, make
+# Custom parameters are passed to cmake.
+# Note the hack with the `--target`. Some autotools libs (freetype) require `--target` to be passed as a part of CC/CXX, otherwise it gets stripped,
+# but CMake doesn't allow flags to be added to `CMAKE_C/CXX_COMPILER`.
 override Build_CMake = $(call cd,"__BUILD_DIR__") && \
 	$(call mkdir,_build) && \
 	$(call cd,_build) && \
-	cmake -Wno-dev $(call escape,-DCMAKE_C_COMPILER="$(CC)" -DCMAKE_CXX_COMPILER="$(CXX)" -DCMAKE_C_FLAGS="$(CFLAGS)" -DCMAKE_CXX_FLAGS="$(CXXFLAGS)" \
-		-DCMAKE_EXE_LINKER_FLAGS="$(LDFLAGS)" -DCMAKE_MODULE_LINKER_FLAGS="$(LDFLAGS)" -DCMAKE_SHARED_LINKER_FLAGS="$(LDFLAGS)") \
+	cmake -Wno-dev $(call escape,-DCMAKE_C_COMPILER="$(filter-out --target=%,$(CC))" -DCMAKE_CXX_COMPILER="$(filter-out --target=%,$(CXX))" \
+		-DCMAKE_C_FLAGS="$(CFLAGS) $(filter --target=%,$(CC))" -DCMAKE_CXX_FLAGS="$(CXXFLAGS) $(filter --target=%,$(CXX))" \
+		-DCMAKE_EXE_LINKER_FLAGS="$(LDFLAGS) $(filter --target=%,$(CC))" -DCMAKE_MODULE_LINKER_FLAGS="$(LDFLAGS) $(filter --target=%,$(CC))" -DCMAKE_SHARED_LINKER_FLAGS="$(LDFLAGS) $(filter --target=%,$(CC))") \
 		-DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$(prefix)" -DCMAKE_SYSTEM_PREFIX_PATH=$(prefix) $1 -G $(CMAKE_MAKEFILE_FLAVOR) .. __LOG__ && \
 	$(configuring_done) && \
 	$(MAKE) --no-print-directory -j$(JOBS) __LOG__ && \
@@ -306,8 +325,9 @@ override build_info_file := $(LOG_DIR)/_buildinfo.txt
 override final_archive_dir := $(name)
 override final_archive := $(final_archive_dir)_prebuilt_$(MODE).tar.gz
 
-override sources_archive_dir := $(name)_source-archives
-override sources_archive := $(sources_archive_dir).tar.gz
+override lib_sources_archive := $(name)_library-sources.tar.gz
+
+override sources_archive := $(name)_sources.tar.gz
 
 .DEFAULT_GOAL := $(final_archive)
 
@@ -328,14 +348,18 @@ $(final_archive): $(last_target)
 clean:
 	@$(call rmdir,./$(OUTPUT_DIR))
 	@$(call rmdir,./$(TMP_DIR))
-	@$(call rmdir,./$(final_archive_dir))
 
-# Add library sources and the rest of the current directory to an archive.
-# This only works after `make clean`.
-.PHONY: archive_sources
-archive_sources:
+# Add library sources to an archive.
+.PHONY: archive-library-sources
+archive-library-sources:
+	@$(call rmfile,./$(lib_sources_archive))
+	@tar -czf $(lib_sources_archive) $(SOURCE_DIR)
+
+# Add library sources and build scripts to an archive.
+.PHONY: archive-sources
+archive-sources:
 	@$(call rmfile,./$(sources_archive))
-	@tar -czf $(sources_archive) $(SOURCE_DIR)
+	@tar -czf $(sources_archive) Makefile config.mk README.md LICENSE.md $(SOURCE_DIR)
 
 # An internal target.
 # Prints various info about the build configuration, and prepares things

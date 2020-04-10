@@ -11,6 +11,7 @@ This repository contains scripts for building dependencies for this [simple game
 * **make**
 * **cmake**
 * **tar**
+* **unzip**
 
 **Steps:**
 
@@ -18,35 +19,16 @@ This repository contains scripts for building dependencies for this [simple game
 
 2. **Consider using prebuilt libraries** if they are provided for your platform.
 
-   Currently I only ship prebuilt libraries for `mingw-w64-x86_64` (built with MSYS2 Clang).
+   Currently I only ship prebuilt libraries for `mingw-w64-x86_64` (built with Clang, using libstdc++ provided by MSYS2).
 
-   If you decided to not use prebuilt libraries, then...
+   If you decide to not use prebuilt libraries, then...
 
 3. **Download** the release.
 
-   You need two things:
-
-   * **Build scripts** — Clone the repository and checkout a specific release, or get 'Source code' archive from the Releases page.
-
-   * **Library sources** — Get `<version>_source-archives.tar.gz` from the Releases page.
-
-   Unpack `<version>_source-archives.tar.gz` into the directory where the `Makefile` is. You should get following directory structure:
-
-   ```
-   ├── archives/
-   │   └── ...
-   ├── config.mk
-   └── Makefile
-   ```
+   Go to the 'Releases' page and download `<version>_sources.tag.gz`.
 
 4. **Build** everything.
 
    See comments at the beginning of `config.mk` for instructions.
-
-   TL;DR:
-
-   * Windows x64, Clang — `make PAUSE=never CC=clang CXX=clang++ MODE=windows-x86_64 JOBS=4`
-   * Linux, Clang 9 —  `make PAUSE=never CC=clang-9 CXX=clang++-9 MODE=linux JOBS=4`
-   * . . .
 
    If everything works out, you'll get a `.tar.gz` archive with the results.
