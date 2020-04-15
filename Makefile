@@ -117,10 +117,25 @@ export PKG_CONFIG_PATH
 override PKG_CONFIG_LIBDIR := $(prefix)/lib/pkgconfig
 export PKG_CONFIG_LIBDIR
 
+CFLAGS :=
+CXXFLAGS :=
+LDFLAGS :=
+export CFLAGS
+export CXXFLAGS
+export LDFLAGS
+
+FORCED_FLAGS := # A special variable, not exported but added to compiler invocations.
+
 CC ?= $(error Variable not specified: `CC`)
+override C_COMPILER := $(CC)
+override CC += $(FORCED_FLAGS)
 export CC
+
 CXX ?= $(error Variable not specified: `CXX`)
+override CXX_COMPILER := $(CXX)
+override CXX += $(FORCED_FLAGS)
 export CXX
+
 CPP ?= # Empty string should be good enough in most cases.
 export CPP
 
@@ -162,7 +177,7 @@ override name = $(error Config file doesn't specify package name)
 # `grep -v InstalledDir` strips the installation directory from Clang output.
 override echo_build_info = (echo 'name = $(name)' && echo 'MODE = $(MODE)' && echo && \
 	((echo 'CC:' && $(CC) --version && echo && echo 'CXX:' && $(CXX) --version) | grep -v InstalledDir) && echo && \
-	echo 'CFLAGS = $(CFLAGS)' && echo 'CXXFLAGS = $(CXXFLAGS)' && echo 'LDFLAGS = $(LDFLAGS)')
+	echo 'CFLAGS = $(CFLAGS)' && echo 'CXXFLAGS = $(CXXFLAGS)' && echo 'LDFLAGS = $(LDFLAGS)' && echo 'FORCED_FLAGS = $(FORCED_FLAGS)')
 
 # $1 is the build mode.
 # $2 is the log file name.
@@ -285,9 +300,9 @@ override Build_ConfigureMake = \
 override Build_CMake = $(call cd,"__BUILD_DIR__") && \
 	$(call mkdir,_build) && \
 	$(call cd,_build) && \
-	cmake -Wno-dev $(call escape,-DCMAKE_C_COMPILER="$(filter-out --target=%,$(CC))" -DCMAKE_CXX_COMPILER="$(filter-out --target=%,$(CXX))" \
-		-DCMAKE_C_FLAGS="$(CFLAGS) $(filter --target=%,$(CC))" -DCMAKE_CXX_FLAGS="$(CXXFLAGS) $(filter --target=%,$(CXX))" \
-		-DCMAKE_EXE_LINKER_FLAGS="$(LDFLAGS) $(filter --target=%,$(CC))" -DCMAKE_MODULE_LINKER_FLAGS="$(LDFLAGS) $(filter --target=%,$(CC))" -DCMAKE_SHARED_LINKER_FLAGS="$(LDFLAGS) $(filter --target=%,$(CC))") \
+	cmake -Wno-dev $(call escape,-DCMAKE_C_COMPILER="$(C_COMPILER)" -DCMAKE_CXX_COMPILER="$(CXX_COMPILER)" \
+		-DCMAKE_C_FLAGS="$(CFLAGS) $(FORCED_FLAGS)" -DCMAKE_CXX_FLAGS="$(CXXFLAGS) $(FORCED_FLAGS)" \
+		-DCMAKE_EXE_LINKER_FLAGS="$(LDFLAGS) $(FORCED_FLAGS)" -DCMAKE_MODULE_LINKER_FLAGS="$(LDFLAGS) $(FORCED_FLAGS)" -DCMAKE_SHARED_LINKER_FLAGS="$(LDFLAGS) $(FORCED_FLAGS)") \
 		-DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$(prefix)" -DCMAKE_SYSTEM_PREFIX_PATH=$(prefix) $1 -G $(CMAKE_MAKEFILE_FLAVOR) .. __LOG__ && \
 	$(configuring_done) && \
 	$(MAKE) --no-print-directory -j$(JOBS) __LOG__ && \
@@ -298,13 +313,6 @@ override Build_CMake = $(call cd,"__BUILD_DIR__") && \
 
 MODE :=
 override MODE := $(strip $(MODE))
-
-CFLAGS :=
-CXXFLAGS :=
-LDFLAGS :=
-export CFLAGS
-export CXXFLAGS
-export LDFLAGS
 
 include config.mk
 

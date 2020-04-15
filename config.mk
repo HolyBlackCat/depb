@@ -2,10 +2,10 @@
 #
 # See `Makefile` for detailed instructions.
 # Example usage:
-#   (Windows x32, MSYS2 Clang)   ->  make PAUSE=never CC=clang CXX=clang++ CXXFLAGS=-femulated-tls MODE=windows-i686 JOBS=4
-#   (Windows x64, MSYS2 Clang)   ->  make PAUSE=never CC=clang CXX=clang++ CXXFLAGS=-femulated-tls MODE=windows-x86_64 JOBS=4
-#   (Windows x32, Vanilla Clang) ->  make PAUSE=never CC="clang --target=i686-w64-windows-gnu" CXX="clang++ --target=i686-w64-windows-gnu" CPP=cpp CXXFLAGS=-femulated-tls LDFLAGS=-pthread MODE=windows-i686 JOBS=4
-#   (Windows x64, Vanilla Clang) ->  make PAUSE=never CC="clang --target=x86_64-w64-windows-gnu" CXX="clang++ --target=x86_64-w64-windows-gnu" CPP=cpp CXXFLAGS=-femulated-tls LDFLAGS=-pthread MODE=windows-x86_64 JOBS=4
+#   (Windows x32, MSYS2 Clang)   ->  make PAUSE=never CC=clang CXX=clang++ FORCED_FLAGS=-femulated-tls MODE=windows-i686 JOBS=4
+#   (Windows x64, MSYS2 Clang)   ->  make PAUSE=never CC=clang CXX=clang++ FORCED_FLAGS=-femulated-tls MODE=windows-x86_64 JOBS=4
+#   (Windows x32, Vanilla Clang) ->  make PAUSE=never CC=clang CXX=clang++ CPP=cpp FORCED_FLAGS="-femulated-tls --target=i686-w64-windows-gnu" LDFLAGS=-pthread  MODE=windows-i686 JOBS=4
+#   (Windows x64, Vanilla Clang) ->  make PAUSE=never CC=clang CXX=clang++ CPP=cpp FORCED_FLAGS="-femulated-tls --target=x86_64-w64-windows-gnu" LDFLAGS=-pthread MODE=windows-x86_64 JOBS=4
 #   (Linux, Clang 10)            ->  make PAUSE=never CC=clang-10 CXX=clang++-10 MODE=linux JOBS=4
 # `-femulated-tls` is needed when using Clang with libstdc++, if atomics are used.
 
