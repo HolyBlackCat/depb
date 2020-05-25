@@ -32,7 +32,7 @@
 # --- CONFIGURATION ---
 
 # Required variables
-override name := imp-re_deps_2020-04-10
+override name := imp-re_deps_2020-05-10
 override mode_list := windows-i686 windows-x86_64 linux
 
 # Misc
@@ -57,7 +57,7 @@ $(error Not sure how to build sdl2 for this mode. Please fix `config.mk`.)
 endif
 
 # - Freetype
-$(call Library,freetype,freetype-2.10.1.tar.gz,TarArchive,ConfigureMake,\
+$(call Library,freetype,freetype-2.10.2.tar.gz,TarArchive,ConfigureMake,\
 	--with-zlib --without-bzip2 --without-png --without-harfbuzz)
 
 # - Ogg
@@ -67,7 +67,7 @@ $(call Library,ogg,libogg-1.3.4.tar.gz,TarArchive,ConfigureMake)
 $(call Library,vorbis,libvorbis-1.3.6.tar.gz,TarArchive,ConfigureMake)
 
 # - Fmt
-$(call Library,fmt,fmt-6.2.0.zip,ZipArchive,CMake)
+$(call Library,fmt,fmt-6.2.1.zip,ZipArchive,CMake)
 
 # - Double-conversion
 $(call Library,double-conversion,double-conversion-3.1.5+git-trunk-a54561b.tar.gz,TarArchive,CMake)
