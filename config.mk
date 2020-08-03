@@ -2,10 +2,10 @@
 #
 # See `Makefile` for detailed instructions.
 # Example usage:
-#   (Windows x32, MSYS2 Clang)   ->  make PAUSE=never CC=clang CXX=clang++ FORCED_FLAGS=-femulated-tls MODE=windows-i686 JOBS=4
-#   (Windows x64, MSYS2 Clang)   ->  make PAUSE=never CC=clang CXX=clang++ FORCED_FLAGS=-femulated-tls MODE=windows-x86_64 JOBS=4
-#   (Windows x32, Vanilla Clang) ->  make PAUSE=never CC=clang CXX=clang++ CPP=cpp FORCED_FLAGS="-femulated-tls --target=i686-w64-windows-gnu" LDFLAGS=-pthread  MODE=windows-i686 JOBS=4
 #   (Windows x64, Vanilla Clang) ->  make PAUSE=never CC=clang CXX=clang++ CPP=cpp FORCED_FLAGS="-femulated-tls --target=x86_64-w64-windows-gnu" LDFLAGS=-pthread MODE=windows-x86_64 JOBS=4
+#   (Windows x32, Vanilla Clang) ->  make PAUSE=never CC=clang CXX=clang++ CPP=cpp FORCED_FLAGS="-femulated-tls --target=i686-w64-windows-gnu" LDFLAGS=-pthread  MODE=windows-i686 JOBS=4
+#   (Windows x64, MSYS2 Clang)   ->  make PAUSE=never CC=clang CXX=clang++ FORCED_FLAGS=-femulated-tls MODE=windows-x86_64 JOBS=4
+#   (Windows x32, MSYS2 Clang)   ->  make PAUSE=never CC=clang CXX=clang++ FORCED_FLAGS=-femulated-tls MODE=windows-i686 JOBS=4
 #   (Linux, Clang 10)            ->  make PAUSE=never CC=clang-10 CXX=clang++-10 MODE=linux JOBS=4
 # `-femulated-tls` is needed when using Clang with libstdc++, if atomics are used.
 
@@ -32,7 +32,7 @@
 # --- CONFIGURATION ---
 
 # Required variables
-override name := imp-re_deps_2020-07-06
+override name := imp-re_deps_2020-08-02
 override mode_list := windows-i686 windows-x86_64 linux
 
 # Misc
@@ -103,3 +103,20 @@ else ifneq ($(MODE),)
 $(error Not sure how to build openal for this mode. Please fix `config.mk`.)
 endif
 $(call Library,openal,openal-soft-1.20.1.tar.bz2,TarArchive,CMake,$(openal_flags))
+
+# - Bullet physics
+# Disable unnecessary stuff.
+# Note that cmake logs say that "BUILD_CLSOCKET BUILD_CPU_DEMOS BUILD_ENET" variables we set aren't "used".
+# But even if we don't set them, they still appear in the cmake cache, so we set them just to be sure.
+override bullet_flags := -DBUILD_BULLET2_DEMOS:BOOL=OFF -DBUILD_EXTRAS:BOOL=OFF -DBUILD_OPENGL3_DEMOS:BOOL=OFF \
+	-DBUILD_UNIT_TESTS:BOOL=OFF -DBUILD_CLSOCKET:BOOL=OFF -DBUILD_CPU_DEMOS:BOOL=OFF -DBUILD_ENET:BOOL=OFF
+# Use doubles instead of floats.
+override bullet_flags += -DUSE_DOUBLE_PRECISION:BOOL=ON
+# Disable shared libraries. This should be the default behavior (with the flags above), but we also set it for a good measure.
+override bullet_flags += -DBUILD_SHARED_LIBS:BOOL=OFF
+# This defaults to off if the makefile flavor is not exactly "Unix Makefiles", which is silly.
+# That used to cause 'make install' to not install anything useful.
+override bullet_flags += -DINSTALL_LIBS:BOOL=ON
+# The `_no-examples` suffix on the archive indicates that `./examples` and `./data` directories were stripped from it.
+# This decreases the archive size from 170+ mb to 10+ mb.
+$(call Library,bullet-physics,bullet3-2.89_no-examples.tar.gz,TarArchive,CMake,$(bullet_flags))

@@ -49,8 +49,9 @@ __MAKE_EXECUTE_COMMAND__ ?=
 ifneq ($(strip $(__MAKE_EXECUTE_COMMAND__)),)
 
 # $1 is a directory. If it has a single element, appends that element to the path (recursively).
-override most_nested_entry = $(call most_nested_entry_0,$1,$(wildcard $1/*))
+override most_nested_entry = $(call most_nested_entry_0,$1,$(filter-out $(most_nested_entry_ignored_files),$(wildcard $1/*)))
 override most_nested_entry_0 = $(if $(filter 1,$(words $2)),$(call most_nested_entry,$2),$1)
+override most_nested_entry_ignored_files = pax_global_header
 
 .PHONY: command
 command:
@@ -295,8 +296,6 @@ override Build_ConfigureMake = \
 # Mode CMake
 # Runs: cmake, make
 # Custom parameters are passed to cmake.
-# Note the hack with the `--target`. Some autotools libs (freetype) require `--target` to be passed as a part of CC/CXX, otherwise it gets stripped,
-# but CMake doesn't allow flags to be added to `CMAKE_C/CXX_COMPILER`.
 override Build_CMake = $(call cd,"__BUILD_DIR__") && \
 	$(call mkdir,_build) && \
 	$(call cd,_build) && \
