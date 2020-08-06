@@ -67,7 +67,7 @@ $(call Library,ogg,libogg-1.3.4.tar.gz,TarArchive,ConfigureMake)
 $(call Library,vorbis,libvorbis-1.3.7.tar.gz,TarArchive,ConfigureMake)
 
 # - Fmt
-$(call Library,fmt,fmt-7.0.0.zip,ZipArchive,CMake)
+$(call Library,fmt,fmt-7.0.2.zip,ZipArchive,CMake)
 
 # - Double-conversion
 $(call Library,double-conversion,double-conversion-3.1.5+git-trunk-a54561b.tar.gz,TarArchive,CMake)
