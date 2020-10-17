@@ -39,7 +39,7 @@ override LANG :=
 export LANG
 
 
-# --- ALTERNATIVE  MAKEFILE MODES ---
+# --- ALTERNATIVE MAKEFILE MODES ---
 
 # If this is non-null, this command is executed instead of doing anything else.
 # In the command, `__BUILD_DIR__` is replaced with the build directory,
@@ -126,6 +126,8 @@ export CXXFLAGS
 export LDFLAGS
 
 FORCED_FLAGS := # A special variable, not exported but added to compiler invocations.
+
+CMAKE := cmake# We might want to run something else instead of the regular `cmake`.
 
 CC ?= $(error Variable not specified: `CC`)
 override C_COMPILER := $(CC)
@@ -299,7 +301,7 @@ override Build_ConfigureMake = \
 override Build_CMake = $(call cd,"__BUILD_DIR__") && \
 	$(call mkdir,_build) && \
 	$(call cd,_build) && \
-	cmake -Wno-dev $(call escape,-DCMAKE_C_COMPILER="$(C_COMPILER)" -DCMAKE_CXX_COMPILER="$(CXX_COMPILER)" \
+	$(CMAKE) -Wno-dev $(call escape,-DCMAKE_C_COMPILER="$(C_COMPILER)" -DCMAKE_CXX_COMPILER="$(CXX_COMPILER)" \
 		-DCMAKE_C_FLAGS="$(CFLAGS) $(FORCED_FLAGS)" -DCMAKE_CXX_FLAGS="$(CXXFLAGS) $(FORCED_FLAGS)" \
 		-DCMAKE_EXE_LINKER_FLAGS="$(LDFLAGS) $(FORCED_FLAGS)" -DCMAKE_MODULE_LINKER_FLAGS="$(LDFLAGS) $(FORCED_FLAGS)" -DCMAKE_SHARED_LINKER_FLAGS="$(LDFLAGS) $(FORCED_FLAGS)") \
 		-DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$(prefix)" -DCMAKE_SYSTEM_PREFIX_PATH=$(prefix) $1 -G $(CMAKE_MAKEFILE_FLAVOR) .. __LOG__ && \

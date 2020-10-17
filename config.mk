@@ -6,7 +6,10 @@
 #   (Windows x32, Vanilla Clang) ->  make PAUSE=never CC=clang CXX=clang++ CPP=cpp FORCED_FLAGS="-femulated-tls --target=i686-w64-windows-gnu" LDFLAGS=-pthread  MODE=windows-i686 JOBS=4
 #   (Windows x64, MSYS2 Clang)   ->  make PAUSE=never CC=clang CXX=clang++ FORCED_FLAGS=-femulated-tls MODE=windows-x86_64 JOBS=4
 #   (Windows x32, MSYS2 Clang)   ->  make PAUSE=never CC=clang CXX=clang++ FORCED_FLAGS=-femulated-tls MODE=windows-i686 JOBS=4
-#   (Linux, Clang 10)            ->  make PAUSE=never CC=clang-10 CXX=clang++-10 MODE=linux JOBS=4
+#   (Linux, Clang 11)            ->  make PAUSE=never CC=clang-11 CXX=clang++-11 MODE=linux JOBS=4
+#
+#   (Linux -> Windows x64, Clang, msys2_pacmake) ->  make PAUSE=never CC=win-clang CXX=win-clang++ CMAKE=win-cmake MODE=windows-x86_64 JOBS=4
+#   (See https://github.com/HolyBlackCat/msys2-pacmake for details.)
 # `-femulated-tls` is needed when using Clang with libstdc++, if atomics are used.
 
 # --- DEPENDENCIES ---
@@ -67,7 +70,8 @@ $(call Library,ogg,libogg-1.3.4.tar.gz,TarArchive,ConfigureMake)
 $(call Library,vorbis,libvorbis-1.3.7.tar.gz,TarArchive,ConfigureMake)
 
 # - Fmt
-$(call Library,fmt,fmt-7.0.2.zip,ZipArchive,CMake)
+# Tests seem to be compiled but not run by default. Even compiling them takes a lot of time, so we disable them.
+$(call Library,fmt,fmt-7.0.2.zip,ZipArchive,CMake,-DFMT_TEST=OFF)
 
 # - Double-conversion
 $(call Library,double-conversion,double-conversion-3.1.5+git-trunk-a54561b.tar.gz,TarArchive,CMake)
@@ -92,11 +96,16 @@ endif
 override openal_flags := -DALSOFT_EXAMPLES=FALSE
 ifeq ($(MODE),windows-x86_64)
 # We're on Windows. Make sure we're building with DirectSound backend.
-override openal_dsound_header := /mingw64/x86_64-w64-mingw32/include/dsound.h
-$(if $(wildcard $(openal_dsound_header)),,\
+# Find the DirectSound header.
+override openal_dsound_header := $(realpath $(dir $(shell which gcc.exe))../x86_64-w64-mingw32/include/dsound.h)
+$(if $(openal_dsound_header),,\
 	$(error `$(notdir $(openal_dsound_header))` not found in `$(dir $(openal_dsound_header))`.\
 	$(lf) If you're using MSYS2, go install `mingw-w64-x86_64-wined3d` package))
-override openal_flags += -DALSOFT_REQUIRE_DSOUND=TRUE -DDSOUND_INCLUDE_DIR=$(dir $(openal_dsound_header))
+# Find the DirectSound library. This seems to be unnecessary on MSYS2, but it's not found automatically when cross-compiling from Linux.
+override openal_dsound_lib := $(realpath $(dir $(shell which gcc.exe))../x86_64-w64-mingw32/lib/libdsound.a)
+$(if $(openal_dsound_lib),,\
+	$(error `$(openal_dsound_lib)` not found))# This should never happen if the header checked above exists.
+override openal_flags += -DALSOFT_REQUIRE_DSOUND=TRUE -DDSOUND_INCLUDE_DIR=$(dir $(openal_dsound_header)) -DDSOUND_LIBRARY=$(openal_dsound_lib)
 else ifeq ($(MODE),linux)
 override openal_flags += -DALSOFT_REQUIRE_ALSA=TRUE -DALSOFT_REQUIRE_OSS=TRUE -DALSOFT_REQUIRE_PULSEAUDIO=TRUE
 else ifneq ($(MODE),)
