@@ -96,7 +96,7 @@ endif
 override openal_flags := -DALSOFT_EXAMPLES=FALSE
 ifeq ($(MODE),windows-x86_64)
 # Enable SDL2 backend.
-override openal_flags += -DALSOFT_REQUIRE_SDL2=TRUE -DSDL2_LIBRARY=$(prefix)/lib/libSDL2.a -DSDL2_INCLUDE_DIR=$(prefix)/include -DALSOFT_BACKEND_SDL2=TRUE
+override openal_flags += -DALSOFT_REQUIRE_SDL2=TRUE -DSDL2_LIBRARY=$(prefix)/lib/libSDL2.dll.a -DSDL2_INCLUDE_DIR=$(prefix)/include -DALSOFT_BACKEND_SDL2=TRUE
 else ifeq ($(MODE),linux)
 override openal_flags += -DALSOFT_REQUIRE_ALSA=TRUE -DALSOFT_REQUIRE_OSS=TRUE -DALSOFT_REQUIRE_PULSEAUDIO=TRUE
 else ifneq ($(MODE),)
