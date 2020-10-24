@@ -95,17 +95,8 @@ endif
 # - OpenAL
 override openal_flags := -DALSOFT_EXAMPLES=FALSE
 ifeq ($(MODE),windows-x86_64)
-# We're on Windows. Make sure we're building with DirectSound backend.
-# Find the DirectSound header.
-override openal_dsound_header := $(realpath $(dir $(shell which gcc.exe))../x86_64-w64-mingw32/include/dsound.h)
-$(if $(openal_dsound_header),,\
-	$(error `$(notdir $(openal_dsound_header))` not found in `$(dir $(openal_dsound_header))`.\
-	$(lf) If you're using MSYS2, go install `mingw-w64-x86_64-wined3d` package))
-# Find the DirectSound library. This seems to be unnecessary on MSYS2, but it's not found automatically when cross-compiling from Linux.
-override openal_dsound_lib := $(realpath $(dir $(shell which gcc.exe))../x86_64-w64-mingw32/lib/libdsound.a)
-$(if $(openal_dsound_lib),,\
-	$(error `$(openal_dsound_lib)` not found))# This should never happen if the header checked above exists.
-override openal_flags += -DALSOFT_REQUIRE_DSOUND=TRUE -DDSOUND_INCLUDE_DIR=$(dir $(openal_dsound_header)) -DDSOUND_LIBRARY=$(openal_dsound_lib)
+# Enable SDL2 backend.
+override openal_flags += -DALSOFT_REQUIRE_SDL2=TRUE -DSDL2_LIBRARY=$(prefix)/lib/libSDL2.a -DSDL2_INCLUDE_DIR=$(prefix)/include -DALSOFT_BACKEND_SDL2=TRUE
 else ifeq ($(MODE),linux)
 override openal_flags += -DALSOFT_REQUIRE_ALSA=TRUE -DALSOFT_REQUIRE_OSS=TRUE -DALSOFT_REQUIRE_PULSEAUDIO=TRUE
 else ifneq ($(MODE),)
