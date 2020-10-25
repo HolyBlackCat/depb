@@ -288,22 +288,25 @@ override Build_Custom = \
 # Mode: ConfigureMake
 # Runs: ./configure, make, make install
 # Custom parameters are passed to ./configure.
-# Except parameters starting with ` are treated as env variable assignments, passed to all three commands (with leading ` stripped).
+# Except parameters starting with ` are prepended to all `configure` and `make` calls,
+#   with the leading ` removed and with `;` replaced with spaces. The intent is to put environment variables in there.
 override Build_ConfigureMake = \
 	$(call cd,"__BUILD_DIR__") && \
-	$(patsubst `%,%,$(filter `%,$1)) ./configure "--prefix=$(prefix)" $(filter-out `%,$1) __LOG__ && \
+	$(subst ;, ,$(patsubst `%,%,$(filter `%,$1))) ./configure "--prefix=$(prefix)" $(filter-out `%,$1) __LOG__ && \
 	$(configuring_done) && \
-	$(patsubst `%,%,$(filter `%,$1)) $(MAKE) --no-print-directory -j$(JOBS) __LOG__ && \
-	$(patsubst `%,%,$(filter `%,$1)) $(MAKE) --no-print-directory install __LOG__
+	$(subst ;, ,$(patsubst `%,%,$(filter `%,$1))) $(MAKE) --no-print-directory -j$(JOBS) __LOG__ && \
+	$(subst ;, ,$(patsubst `%,%,$(filter `%,$1))) $(MAKE) --no-print-directory install __LOG__
 # Mode CMake
 # Runs: cmake, make
 # Custom parameters are passed to cmake.
 override Build_CMake = $(call cd,"__BUILD_DIR__") && \
 	$(call mkdir,_build) && \
 	$(call cd,_build) && \
-	$(CMAKE) -Wno-dev $(call escape,-DCMAKE_C_COMPILER="$(C_COMPILER)" -DCMAKE_CXX_COMPILER="$(CXX_COMPILER)" \
-		-DCMAKE_C_FLAGS="$(CFLAGS) $(FORCED_FLAGS)" -DCMAKE_CXX_FLAGS="$(CXXFLAGS) $(FORCED_FLAGS)" \
-		-DCMAKE_EXE_LINKER_FLAGS="$(LDFLAGS) $(FORCED_FLAGS)" -DCMAKE_MODULE_LINKER_FLAGS="$(LDFLAGS) $(FORCED_FLAGS)" -DCMAKE_SHARED_LINKER_FLAGS="$(LDFLAGS) $(FORCED_FLAGS)") \
+	$(CMAKE) -Wno-dev $(call escape,\
+		-DCMAKE_C_COMPILER="$(subst $(space),;,$(strip $(C_COMPILER) $(FORCED_FLAGS)))" \
+		-DCMAKE_CXX_COMPILER="$(subst $(space),;,$(strip $(CXX_COMPILER) $(FORCED_FLAGS)))" \
+		-DCMAKE_C_FLAGS="$(CFLAGS)" -DCMAKE_CXX_FLAGS="$(CXXFLAGS)" \
+		-DCMAKE_EXE_LINKER_FLAGS="$(LDFLAGS)" -DCMAKE_MODULE_LINKER_FLAGS="$(LDFLAGS)" -DCMAKE_SHARED_LINKER_FLAGS="$(LDFLAGS)") \
 		-DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$(prefix)" -DCMAKE_SYSTEM_PREFIX_PATH=$(prefix) $1 -G $(CMAKE_MAKEFILE_FLAVOR) .. __LOG__ && \
 	$(configuring_done) && \
 	$(MAKE) --no-print-directory -j$(JOBS) __LOG__ && \
@@ -414,4 +417,4 @@ endif
 	@$(maybe_pause_hard)
 
 
-endif
+endif # ifneq ($(strip $(__MAKE_EXECUTE_COMMAND__)),)
