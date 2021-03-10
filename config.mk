@@ -17,12 +17,8 @@
 # About SDL2:
 #   On Windows, we rely on a prebuild SDL2.
 #   On Linux we build it ourselves. According to `docs/README-linux.md`, you need following dependencies to have all the features:
-#       sudo apt install build-essential mercurial make cmake autoconf automake libtool libasound2-dev libpulse-dev libaudio-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxinerama-dev libxxf86vm-dev libxss-dev libgl1-mesa-dev libdbus-1-dev libudev-dev libgles2-mesa-dev libegl1-mesa-dev libibus-1.0-dev fcitx-libs-dev libsamplerate0-dev libsndio-dev libwayland-dev libxkbcommon-dev wayland-protocols
-#   The list in this comment was last updated at SDL 2.0.12.
-#   Following changes were made compared to the list in the readme:
-#       * Wayland libs (mentioned in the readme after the primary ones) were appended to the list.
-#       * `libesd0-dev` and `libgles1-mesa-dev` were removed from the list, as they're not in Ubuntu 20.04 packages.
-#       * `` was added to the list, otherwise I was getting error "error: unknown type name 'SDL_DBusContext'".
+#       sudo apt-get install build-essential mercurial make cmake autoconf automake libtool libasound2-dev libpulse-dev libaudio-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxinerama-dev libxxf86vm-dev libxss-dev libgl1-mesa-dev libdbus-1-dev libudev-dev libgles2-mesa-dev libegl1-mesa-dev libibus-1.0-dev fcitx-libs-dev libsamplerate0-dev libsndio-dev libwayland-dev libxkbcommon-dev
+#   The list in this comment was last updated at SDL 2.0.14.
 #
 # About OpenAL:
 #   On Windows we rely on the SDL2 backend. If any other backends happen to be detected, good.
@@ -39,7 +35,7 @@
 # --- CONFIGURATION ---
 
 # Required variables
-override name := imp-re_deps_2020-10-25
+override name := imp-re_deps_2021-03-11
 override mode_list := windows-i686 windows-x86_64 linux
 
 # Misc
@@ -64,7 +60,7 @@ $(error Not sure how to build zlib for this mode. Please fix `config.mk`.)
 endif
 
 # - Freetype
-$(call Library,freetype,freetype-2.10.2.tar.gz,TarArchive,ConfigureMake,\
+$(call Library,freetype,freetype-2.10.4.tar.gz,TarArchive,ConfigureMake,\
 	--with-zlib --without-bzip2 --without-png --without-harfbuzz)
 
 # - Ogg
@@ -75,7 +71,7 @@ $(call Library,vorbis,libvorbis-1.3.7.tar.gz,TarArchive,ConfigureMake)
 
 # - Fmt
 # Tests seem to be compiled but not run by default. Even compiling them takes a lot of time, so we disable them.
-$(call Library,fmt,fmt-7.0.2.zip,ZipArchive,CMake,-DFMT_TEST=OFF)
+$(call Library,fmt,fmt-7.1.3.zip,ZipArchive,CMake,-DFMT_TEST=OFF)
 
 # - Double-conversion
 $(call Library,double-conversion,double-conversion-3.1.5+git-trunk-a54561b.tar.gz,TarArchive,CMake)
@@ -85,12 +81,12 @@ $(call Library,double-conversion,double-conversion-3.1.5+git-trunk-a54561b.tar.g
 
 # - SDL2
 ifeq ($(MODE),windows-i686)
-$(call Library,sdl2,SDL2-devel-2.0.12-mingw.tar.gz,TarArchive,Prebuilt,i686-w64-mingw32)
+$(call Library,sdl2,SDL2-devel-2.0.14-mingw.tar.gz,TarArchive,Prebuilt,i686-w64-mingw32)
 else ifeq ($(MODE),windows-x86_64)
-$(call Library,sdl2,SDL2-devel-2.0.12-mingw.tar.gz,TarArchive,Prebuilt,x86_64-w64-mingw32)
+$(call Library,sdl2,SDL2-devel-2.0.14-mingw.tar.gz,TarArchive,Prebuilt,x86_64-w64-mingw32)
 else ifeq ($(MODE),linux)
 # Note that we unset pkg-config variables, because they'd otherwise point to our target directory, and SDL relies on a lot of external dependencies.
-$(call Library,sdl2,SDL2-2.0.12.tar.gz,TarArchive,ConfigureMake,`env;-uPKG_CONFIG_PATH;-uPKG_CONFIG_LIBDIR)
+$(call Library,sdl2,SDL2-2.0.14.tar.gz,TarArchive,ConfigureMake,`env;-uPKG_CONFIG_PATH;-uPKG_CONFIG_LIBDIR)
 else ifneq ($(MODE),)
 $(error Not sure how to build SDL2 for this mode. Please fix `config.mk`.)
 endif
@@ -102,11 +98,11 @@ override openal_flags += -DALSOFT_REQUIRE_SDL2=TRUE -DSDL2_LIBRARY=$(prefix)/lib
 ifeq ($(is_windows),)
 # On Linux, disable all the extra backends to make sure we only depend on SDL2.
 # The list of backends was obtained by stopping the build after configuration, and looking at the CMake variables.
-# We don't disable `ALSOFT_BACKEND_SDL2`, and also `ALSOFT_BACKEND_SDL2` (which is a backend that writes to a file, so it's harmless).
-# The list of backends was last updated at OpenAL-soft 1.20.1.
+# We don't disable `ALSOFT_BACKEND_SDL2`, and also `ALSOFT_BACKEND_WAVE` (which is a backend that writes to a file, so it's harmless).
+# The list of backends was last updated at OpenAL-soft 1.21.1.
 override openal_flags += -DALSOFT_BACKEND_ALSA=FALSE -DALSOFT_BACKEND_OSS=FALSE -DALSOFT_BACKEND_PULSEAUDIO=FALSE -DALSOFT_BACKEND_SNDIO=FALSE
 endif
-$(call Library,openal,openal-soft-1.20.1.tar.bz2,TarArchive,CMake,$(openal_flags))
+$(call Library,openal,openal-soft-1.21.1.tar.bz2,TarArchive,CMake,$(openal_flags))
 
 # - Bullet physics
 # Disable unnecessary stuff.
@@ -123,4 +119,4 @@ override bullet_flags += -DBUILD_SHARED_LIBS:BOOL=OFF
 override bullet_flags += -DINSTALL_LIBS:BOOL=ON
 # The `_no-examples` suffix on the archive indicates that `./examples` and `./data` directories were stripped from it.
 # This decreases the archive size from 170+ mb to 10+ mb.
-$(call Library,bullet-physics,bullet3-2.89_no-examples.tar.gz,TarArchive,CMake,$(bullet_flags))
+$(call Library,bullet-physics,bullet3-3.09_no-examples.tar.gz,TarArchive,CMake,$(bullet_flags))
