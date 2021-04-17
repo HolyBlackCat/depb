@@ -71,6 +71,32 @@ $(strip)
 $(strip)
 endef
 
+# Used to create local variables in a safer way. E.g. `$(call var,x := 42)`.
+override var = $(eval override $(subst $,$$$$,$1))
+
+# Encloses $1 in single quotes, with proper escaping for the shell.
+# If you makefile uses single quotes everywhere, a decent way to transition is to manually search and replace `'(\$(?:.|\(.*?\)))'` with `$(call quote,$1)`.
+override quote = '$(subst ','"'"',$1)'
+
+ifeq ($(filter --trace,$(MAKEFLAGS)),)
+# Same as `$(shell ...)`, but triggers a error on failure.
+override safe_shell = $(shell $1)$(if $(filter-out 0,$(.SHELLSTATUS)),$(error Unable to execute `$1`, exit code $(.SHELLSTATUS)))
+# Same as `$(shell ...)`, expands to the shell status code rather than the command output.
+override shell_status = $(call,$(shell $1))$(.SHELLSTATUS)
+else
+# Same functions but with logging.
+override safe_shell = $(info Shell command: $1)$(shell $1)$(if $(filter-out 0,$(.SHELLSTATUS)),$(error Unable to execute `$1`, exit code $(.
+SHELLSTATUS)))
+override shell_status = $(info Shell command: $1)$(call,$(shell $1))$(.SHELLSTATUS)$(info Exit code: $(.SHELLSTATUS))
+endif
+
+# Same as `safe_shell`, but discards the output and expands to nothing.
+override safe_shell_exec = $(call,$(call safe_shell,$1))
+
+# Downloads url $1 to file $2.
+# On success expands to nothing. On failure deletes the unfinished file and expands to a non-empty string.
+override use_wget = $(filter-out 0,$(call shell_status,wget $(call quote,$1) $(if $(filter --trace,$(MAKEFLAGS)),,-q) -c --show-progress -O $(call quote,$2) || (rm -f $(call quote,$2) && false)))
+
 
 # --- CHECK ENVIRONMENT ---
 
@@ -106,10 +132,6 @@ OUTPUT_DIR := output
 SOURCE_DIR := archives
 TMP_DIR := tmp
 LOG_DIR := $(OUTPUT_DIR)/logs
-
-ifeq ($(wildcard ./$(SOURCE_DIR)/*),)
-$(error Library sources not found in `./$(SOURCE_DIR)`. Go download them from 'Releases' page on Github)
-endif
 
 override prefix := $(CURDIR)/$(OUTPUT_DIR)
 
@@ -174,6 +196,7 @@ endif
 
 # Library pack name. Config file must override this.
 override name = $(error Config file doesn't specify package name)
+override url = $(error Config file doesn't specify sources url)
 
 # Prints a short info about the build environment.
 # You can redirect the output as usual.
@@ -336,8 +359,18 @@ override final_archive_dir := $(name)
 override final_archive := $(final_archive_dir)_prebuilt_$(MODE).tar.gz
 
 override lib_sources_archive := $(name)_library-sources.tar.gz
-
 override sources_archive := $(name)_sources.tar.gz
+
+# Download the sources if they are missing.
+ifeq ($(wildcard ./$(SOURCE_DIR)/*),)
+$(info Library sources are missing in `./$(SOURCE_DIR)`.)
+ifeq ($(wildcard ./$(sources_archive)),)
+$(info Downloading...)
+$(if $(call use_wget,$(url),$(sources_archive)),$(error Failed to download library sources.))
+endif
+$(info Extracting...)
+$(call safe_shell,tar -axf $(call quote,./$(sources_archive)) $(call quote,$(SOURCE_DIR)))
+endif
 
 .DEFAULT_GOAL := $(final_archive)
 

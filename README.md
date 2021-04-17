@@ -13,11 +13,10 @@ This repository contains scripts for building dependencies for this [simple game
 
 **Steps:**
 
-1. Go to [Releases](https://github.com/HolyBlackCat/depb/releases) page and **pick a release**.
+1. `git clone https://github.com/HolyBlackCat/depb`<br>
+   `cd depb`
 
-2. **Download** it: `<version>_sources.tag.gz`.
-
-4. **Build** everything by running `make`.
+1. Build everything by running `make`.
 
    See comments at the beginning of `config.mk` for the exact flags you need to pass to `make`.
 

@@ -37,6 +37,7 @@
 # Required variables
 override name := imp-re_deps_2021-03-11
 override mode_list := windows-i686 windows-x86_64 linux
+override url := https://github.com/HolyBlackCat/depb/releases/download/v$(patsubst imp-re_deps_%,%,$(name))/$(name)_sources.tar.gz
 
 # Misc
 override is_windows := $(findstring windows,$(MODE))
