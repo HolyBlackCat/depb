@@ -254,7 +254,7 @@ $4: $2
 	@$(maybe_pause)
 	@$(call echo,Building... [$7])
 	@$(MAKE) --no-print-directory -C $(TMP_DIR) -f $(CURDIR)/Makefile $(filter --trace,$(_MAKEFLAGS))
-	@$(if $(wildcard $(SOURCE_DIR)/$1.pc),mkdir -p '$(prefix)/lib/pkgconfig' && cp -f '$(SOURCE_DIR)/$1.pc' '$(prefix)/lib/pkgconfig/')
+	@(test -e $(call quote,$(SOURCE_DIR)/$1.pc) && mkdir -p $(call quote,$(prefix)/lib/pkgconfig) && cp -f $(call quote,$(SOURCE_DIR)/$1.pc) $(call quote,$(prefix)/lib/pkgconfig/)); true
 	@-$(fix_pkgconfig_files)
 	@$(maybe_pause)
 	@$(call move,$3,$4)
