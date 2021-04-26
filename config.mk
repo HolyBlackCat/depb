@@ -10,6 +10,7 @@
 #
 #   (Linux -> Windows x64, Clang, Quasi-MSYS2) ->  make PAUSE=never CC=win-clang CXX=win-clang++ CMAKE=win-cmake MODE=windows-x86_64 JOBS=12
 #   (See https://github.com/HolyBlackCat/quasi-msys2 for details.)
+# *** WARNING: ***  Use Clang 11 instead of 12 with Quasi-MSYS2! Clang 12 has a bug that causes `std::call_once` to always segfault on Windows!
 # `-femulated-tls` is needed when using Clang with libstdc++, if atomics are used.
 
 # --- DEPENDENCIES ---
