@@ -36,7 +36,7 @@
 # --- CONFIGURATION ---
 
 # Required variables
-override name := imp-re_deps_21-08
+override name := imp-re_deps_21-08-1
 override mode_list := windows-i686 windows-x86_64 linux
 override url := https://github.com/HolyBlackCat/depb/releases/download/v$(patsubst imp-re_deps_%,%,$(name))/$(name)_sources.tar.gz
 
@@ -91,6 +91,18 @@ else ifeq ($(MODE),linux)
 $(call Library,sdl2,SDL2-2.0.16.tar.gz,TarArchive,ConfigureMake,`env;-uPKG_CONFIG_PATH;-uPKG_CONFIG_LIBDIR)
 else ifneq ($(MODE),)
 $(error Not sure how to build SDL2 for this mode. Please fix `config.mk`.)
+endif
+
+# - SDL2_net
+ifeq ($(MODE),windows-i686)
+$(call Library,sdl2_net,SDL2_net-devel-2.0.1-mingw.tar.gz,TarArchive,Prebuilt,i686-w64-mingw32)
+else ifeq ($(MODE),windows-x86_64)
+$(call Library,sdl2_net,SDL2_net-devel-2.0.1-mingw.tar.gz,TarArchive,Prebuilt,x86_64-w64-mingw32)
+else ifeq ($(MODE),linux)
+# Note that we unset pkg-config variables, because they'd otherwise point to our target directory, and SDL relies on a lot of external dependencies.
+$(call Library,sdl2_net,SDL2_net-2.0.1.tar.gz,TarArchive,ConfigureMake)
+else ifneq ($(MODE),)
+$(error Not sure how to build SDL2_net for this mode. Please fix `config.mk`.)
 endif
 
 # - OpenAL
