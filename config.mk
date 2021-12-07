@@ -36,7 +36,7 @@
 # --- CONFIGURATION ---
 
 # Required variables
-override name := imp-re_deps_21-08-1
+override name := imp-re_deps_21-12
 override mode_list := windows-i686 windows-x86_64 linux
 override url := https://github.com/HolyBlackCat/depb/releases/download/v$(patsubst imp-re_deps_%,%,$(name))/$(name)_sources.tar.gz
 
@@ -62,7 +62,7 @@ $(error Not sure how to build zlib for this mode. Please fix `config.mk`.)
 endif
 
 # - Freetype
-$(call Library,freetype,freetype-2.11.0.tar.gz,TarArchive,ConfigureMake,\
+$(call Library,freetype,freetype-2.11.1.tar.gz,TarArchive,ConfigureMake,\
 	--with-zlib --without-bzip2 --without-png --without-harfbuzz)
 
 # - Ogg
@@ -76,19 +76,19 @@ $(call Library,vorbis,libvorbis-1.3.7.tar.gz,TarArchive,ConfigureMake)
 $(call Library,fmt,fmt-8.0.1.zip,ZipArchive,CMake,-DFMT_TEST=OFF)
 
 # - Double-conversion
-$(call Library,double-conversion,double-conversion-3.1.5+git-trunk-44944ac.tar.gz,TarArchive,CMake)
+$(call Library,double-conversion,double-conversion-3.1.6.tar.gz,TarArchive,CMake)
 
 
 # -- Media frameworks --
 
 # - SDL2
 ifeq ($(MODE),windows-i686)
-$(call Library,sdl2,SDL2-devel-2.0.16-mingw.tar.gz,TarArchive,Prebuilt,i686-w64-mingw32)
+$(call Library,sdl2,SDL2-devel-2.0.18-mingw.tar.gz,TarArchive,Prebuilt,i686-w64-mingw32)
 else ifeq ($(MODE),windows-x86_64)
-$(call Library,sdl2,SDL2-devel-2.0.16-mingw.tar.gz,TarArchive,Prebuilt,x86_64-w64-mingw32)
+$(call Library,sdl2,SDL2-devel-2.0.18-mingw.tar.gz,TarArchive,Prebuilt,x86_64-w64-mingw32)
 else ifeq ($(MODE),linux)
 # Note that we unset pkg-config variables, because they'd otherwise point to our target directory, and SDL relies on a lot of external dependencies.
-$(call Library,sdl2,SDL2-2.0.16.tar.gz,TarArchive,ConfigureMake,`env;-uPKG_CONFIG_PATH;-uPKG_CONFIG_LIBDIR)
+$(call Library,sdl2,SDL2-2.0.18.tar.gz,TarArchive,ConfigureMake,`env;-uPKG_CONFIG_PATH;-uPKG_CONFIG_LIBDIR)
 else ifneq ($(MODE),)
 $(error Not sure how to build SDL2 for this mode. Please fix `config.mk`.)
 endif
@@ -133,4 +133,4 @@ override bullet_flags += -DBUILD_SHARED_LIBS:BOOL=OFF
 override bullet_flags += -DINSTALL_LIBS:BOOL=ON
 # The `_no-examples` suffix on the archive indicates that `./examples` and `./data` directories were stripped from it.
 # This decreases the archive size from 170+ mb to 10+ mb.
-$(call Library,bullet-physics,bullet3-3.17_no-examples.tar.gz,TarArchive,CMake,$(bullet_flags))
+$(call Library,bullet-physics,bullet3-3.21_no-examples.tar.gz,TarArchive,CMake,$(bullet_flags))
