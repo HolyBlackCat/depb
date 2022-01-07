@@ -36,7 +36,7 @@
 # --- CONFIGURATION ---
 
 # Required variables
-override name := imp-re_deps_21-12
+override name := imp-re_deps_22-01
 override mode_list := windows-i686 windows-x86_64 linux
 override url := https://github.com/HolyBlackCat/depb/releases/download/v$(patsubst imp-re_deps_%,%,$(name))/$(name)_sources.tar.gz
 
@@ -134,3 +134,6 @@ override bullet_flags += -DINSTALL_LIBS:BOOL=ON
 # The `_no-examples` suffix on the archive indicates that `./examples` and `./data` directories were stripped from it.
 # This decreases the archive size from 170+ mb to 10+ mb.
 $(call Library,bullet-physics,bullet3-3.21_no-examples.tar.gz,TarArchive,CMake,$(bullet_flags))
+
+# - Box2d
+$(call Library,box2d,box2d-2.4.1.tar.gz,TarArchive,CMake,-DBOX2D_BUILD_UNIT_TESTS:BOOL=OFF -DBOX2D_BUILD_TESTBED:BOOL=OFF)
